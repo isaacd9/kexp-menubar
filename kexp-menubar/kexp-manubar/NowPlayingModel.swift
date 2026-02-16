@@ -45,7 +45,6 @@ class NowPlayingModel {
     var thumbnailURL: URL?
     var programName: String = ""
     var hostNames: String = ""
-
     private var timer: Timer?
     private var currentShowUri: String?
 

@@ -9,6 +9,7 @@ import SwiftUI
 
 struct ContentView: View {
     @State private var model = NowPlayingModel()
+    @State private var audioPlayer = AudioPlayer()
 
     var body: some View {
         VStack(spacing: 12) {
@@ -69,14 +70,21 @@ struct ContentView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
-                    .frame(width: 280, alignment: .leading)
+                    .frame(width: 280)
             }
 
             // Controls area
-            Button(action: {}) {
+            Button(action: { audioPlayer.togglePlayback() }) {
                 HStack(spacing: 8) {
-                    Image(systemName: "play.fill")
-                    Text("Listen Live")
+                    if audioPlayer.isBuffering {
+                        ProgressView()
+                            .controlSize(.small)
+                            .tint(.white)
+                        Text("Catching up…")
+                    } else {
+                        Image(systemName: audioPlayer.isPlaying ? "pause.fill" : "play.fill")
+                        Text(audioPlayer.isPlaying ? "Pause" : "Listen Live")
+                    }
                 }
                 .padding(.horizontal, 20)
                 .padding(.vertical, 10)
@@ -85,6 +93,7 @@ struct ContentView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 8))
             }
             .buttonStyle(.plain)
+            .disabled(audioPlayer.isBuffering)
         }
         .padding()
         .onAppear { model.startPolling() }
