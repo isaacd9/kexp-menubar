@@ -13,9 +13,17 @@ struct ContentView: View {
     var body: some View {
         VStack(spacing: 12) {
             // Show name
-            Text("The Afternoon Show")
-                .font(.headline)
-                .foregroundStyle(.secondary)
+            VStack(spacing: 2) {
+                Text(model.programName.isEmpty ? "KEXP" : model.programName)
+                    .font(.headline)
+                    .foregroundStyle(.secondary)
+
+                if !model.hostNames.isEmpty {
+                    Text("with \(model.hostNames)")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                }
+            }
 
             // Album art area
             ZStack {
