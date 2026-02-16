@@ -15,7 +15,7 @@ class AudioPlayer {
     var isPlaying: Bool = false
     var isBuffering: Bool = false
 
-    let player = AVPlayer(url: URL(string: "https://kexp.streamguys1.com/kexp160.aac")!)
+    private var player = AVPlayer(url: URL(string: "https://kexp.streamguys1.com/kexp160.aac")!)
     private var observation: NSKeyValueObservation?
 
     init() {
@@ -70,12 +70,26 @@ class AudioPlayer {
 
         guard let artworkURL = artworkURL else { return }
         print("[NowPlaying] Fetching artwork from: \(artworkURL)")
-        URLSession.shared.dataTask(with: artworkURL) { data, _, _ in
-            guard let data = data, let image = NSImage(data: data) else { return }
+        URLSession.shared.dataTask(with: artworkURL) { data, response, error in
+            if let error = error {
+                print("[NowPlaying] Artwork fetch error: \(error)")
+                return
+            }
+            guard let data = data else {
+                print("[NowPlaying] Artwork fetch returned no data")
+                return
+            }
+            print("[NowPlaying] Artwork fetched \(data.count) bytes")
+            guard let image = NSImage(data: data) else {
+                print("[NowPlaying] Failed to create NSImage from data")
+                return
+            }
+            print("[NowPlaying] Artwork image created: \(image.size)")
             let artwork = MPMediaItemArtwork(boundsSize: image.size) { _ in image }
             DispatchQueue.main.async {
                 info[MPMediaItemPropertyArtwork] = artwork
                 MPNowPlayingInfoCenter.default().nowPlayingInfo = info
+                print("[NowPlaying] Now playing info updated with artwork")
             }
         }.resume()
     }

@@ -14,16 +14,25 @@ struct ContentView: View {
 
     var body: some View {
         VStack(spacing: 12) {
-            // Show name
-            VStack(spacing: 2) {
-                Text(model.programName.isEmpty ? "KEXP" : model.programName)
-                    .font(.title3)
-                    .foregroundStyle(.secondary)
+            // Header
+            HStack {
+                Image("KEXPLogo")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(height: 36)
 
-                if !model.hostNames.isEmpty {
-                    Text("with \(model.hostNames)")
+                Spacer()
+
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text(model.programName.isEmpty ? "" : model.programName)
                         .font(.subheadline)
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(.secondary)
+
+                    if !model.hostNames.isEmpty {
+                        Text("with \(model.hostNames)")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                    }
                 }
             }
 
@@ -32,7 +41,11 @@ struct ContentView: View {
                 RoundedRectangle(cornerRadius: 8)
                     .fill(.quaternary)
 
-                if let url = model.thumbnailURL {
+                if model.isAirbreak {
+                    Image("AirbreakArt")
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                } else if let url = model.thumbnailURL {
                     AsyncImage(url: url) { image in
                         image
                             .resizable()
@@ -79,7 +92,7 @@ struct ContentView: View {
             }
 
             // Controls area
-            HStack(spacing: 12) {
+            ZStack {
                 Button(action: { audioPlayer.togglePlayback() }) {
                     HStack(spacing: 8) {
                         if audioPlayer.isBuffering {
@@ -101,14 +114,22 @@ struct ContentView: View {
                 .buttonStyle(.plain)
                 .disabled(audioPlayer.isBuffering)
 
-                AirPlayButton(player: audioPlayer.player)
-                    .frame(width: 28, height: 28)
+                HStack {
+                    Spacer()
+                    AirPlayButton()
+                        .frame(width: 28, height: 28)
+                }
             }
         }
         .padding()
         .foregroundStyle(.white)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(red: 0x23/255.0, green: 0x1f/255.0, blue: 0x20/255.0))
+        .focusable()
+        .onKeyPress(.space) {
+            audioPlayer.togglePlayback()
+            return .handled
+        }
         .onAppear { model.startPolling() }
         .onDisappear { model.stopPolling() }
         .onChange(of: model.song) {
@@ -123,12 +144,9 @@ struct ContentView: View {
 }
 
 struct AirPlayButton: NSViewRepresentable {
-    let player: AVPlayer
-
     func makeNSView(context: Context) -> AVRoutePickerView {
         let picker = AVRoutePickerView()
         picker.isRoutePickerButtonBordered = false
-        picker.player = player
         return picker
     }
 

@@ -3,7 +3,8 @@
     "allow": [
       "WebFetch(domain:api.kexp.org)",
       "Bash(xcodebuild:*)",
-      "Bash(swiftc -typecheck:*)"
+      "Bash(swiftc -typecheck:*)",
+      "WebFetch(domain:www.kexp.org)"
     ]
   }
 }
