@@ -126,6 +126,7 @@ struct ContentView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(red: 0x23/255.0, green: 0x1f/255.0, blue: 0x20/255.0))
         .focusable()
+        .focusEffectDisabled()
         .onKeyPress(.space) {
             audioPlayer.togglePlayback()
             return .handled
