@@ -18,11 +18,15 @@ nonisolated struct Play: Codable, Sendable {
     let thumbnailUri: String?
     let comment: String?
     let showUri: String?
+    let releaseDate: String?
+    let playType: String?
 
     enum CodingKeys: String, CodingKey {
         case song, artist, album, comment
         case thumbnailUri = "thumbnail_uri"
         case showUri = "show_uri"
+        case releaseDate = "release_date"
+        case playType = "play_type"
     }
 }
 
@@ -41,7 +45,9 @@ class NowPlayingModel {
     var song: String = ""
     var artist: String = ""
     var album: String = ""
+    var releaseYear: String = ""
     var comment: String = ""
+    var isAirbreak: Bool = false
     var thumbnailURL: URL?
     var programName: String = ""
     var hostNames: String = ""
@@ -64,14 +70,20 @@ class NowPlayingModel {
         guard let url = URL(string: "https://api.kexp.org/v2/plays/?format=json&limit=1") else { return }
 
         URLSession.shared.dataTask(with: url) { data, _, error in
-            guard let data = data, error == nil else { return }
+            if let error = error {
+                print("[NowPlaying] Plays fetch error: \(error)")
+                return
+            }
+            guard let data = data else { return }
             guard let result = try? JSONDecoder().decode(PlayResult.self, from: data),
                   let play = result.results.first else { return }
 
             DispatchQueue.main.async {
-                self.song = play.song ?? ""
-                self.artist = play.artist ?? ""
-                self.album = play.album ?? ""
+                self.isAirbreak = play.playType == "airbreak"
+                self.song = self.isAirbreak ? "Airbreak" : (play.song ?? "")
+                self.artist = self.isAirbreak ? "" : (play.artist ?? "")
+                self.album = self.isAirbreak ? "" : (play.album ?? "")
+                self.releaseYear = self.isAirbreak ? "" : String(play.releaseDate?.prefix(4) ?? "")
                 self.comment = play.comment ?? ""
                 if let thumb = play.thumbnailUri, let thumbURL = URL(string: thumb) {
                     self.thumbnailURL = thumbURL
@@ -92,7 +104,11 @@ class NowPlayingModel {
         guard let url = URL(string: uri) else { return }
 
         URLSession.shared.dataTask(with: url) { data, _, error in
-            guard let data = data, error == nil else { return }
+            if let error = error {
+                print("[NowPlaying] Show fetch error: \(error)")
+                return
+            }
+            guard let data = data else { return }
             guard let show = try? JSONDecoder().decode(Show.self, from: data) else { return }
 
             DispatchQueue.main.async {
