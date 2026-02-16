@@ -10,7 +10,7 @@ import SwiftUI
 @main
 struct kexp_menubarApp: App {
     var body: some Scene {
-        MenuBarExtra("KEXP", systemImage: "radio") {
+        MenuBarExtra("KEXP", image: "MenuBarIcon") {
             ContentView()
         }
         .menuBarExtraStyle(.window)
