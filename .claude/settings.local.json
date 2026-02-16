@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "WebFetch(domain:api.kexp.org)"
+      "WebFetch(domain:api.kexp.org)",
+      "Bash(xcodebuild:*)",
+      "Bash(swiftc -typecheck:*)"
     ]
   }
 }

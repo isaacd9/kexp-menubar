@@ -5,15 +5,17 @@
 //  Created by Isaac Diamond on 2/16/26.
 //
 
+import AppKit
 import AVFoundation
 import Foundation
+import MediaPlayer
 
 @Observable
 class AudioPlayer {
     var isPlaying: Bool = false
     var isBuffering: Bool = false
 
-    private var player = AVPlayer(url: URL(string: "https://kexp.streamguys1.com/kexp160.aac")!)
+    let player = AVPlayer(url: URL(string: "https://kexp.streamguys1.com/kexp160.aac")!)
     private var observation: NSKeyValueObservation?
 
     init() {
@@ -22,7 +24,24 @@ class AudioPlayer {
                 guard let self = self else { return }
                 self.isBuffering = player.timeControlStatus == .waitingToPlayAtSpecifiedRate
                 self.isPlaying = player.timeControlStatus == .playing
+                MPNowPlayingInfoCenter.default().playbackState = self.isPlaying ? .playing : .paused
             }
+        }
+
+        let commandCenter = MPRemoteCommandCenter.shared()
+        commandCenter.playCommand.addTarget { [weak self] _ in
+            guard let self = self, !self.isPlaying else { return .success }
+            self.togglePlayback()
+            return .success
+        }
+        commandCenter.pauseCommand.addTarget { [weak self] _ in
+            guard let self = self, self.isPlaying || self.isBuffering else { return .success }
+            self.togglePlayback()
+            return .success
+        }
+        commandCenter.togglePlayPauseCommand.addTarget { [weak self] _ in
+            self?.togglePlayback()
+            return .success
         }
     }
 
@@ -37,5 +56,27 @@ class AudioPlayer {
             }
             player.play()
         }
+    }
+
+    func updateNowPlayingInfo(song: String, artist: String, album: String, artworkURL: URL?) {
+        var info: [String: Any] = [
+            MPMediaItemPropertyTitle: song,
+            MPMediaItemPropertyArtist: artist,
+            MPMediaItemPropertyAlbumTitle: album,
+            MPNowPlayingInfoPropertyIsLiveStream: true,
+        ]
+
+        MPNowPlayingInfoCenter.default().nowPlayingInfo = info
+
+        guard let artworkURL = artworkURL else { return }
+        print("[NowPlaying] Fetching artwork from: \(artworkURL)")
+        URLSession.shared.dataTask(with: artworkURL) { data, _, _ in
+            guard let data = data, let image = NSImage(data: data) else { return }
+            let artwork = MPMediaItemArtwork(boundsSize: image.size) { _ in image }
+            DispatchQueue.main.async {
+                info[MPMediaItemPropertyArtwork] = artwork
+                MPNowPlayingInfoCenter.default().nowPlayingInfo = info
+            }
+        }.resume()
     }
 }

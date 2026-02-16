@@ -5,6 +5,7 @@
 //  Created by Isaac Diamond on 2/16/26.
 //
 
+import AVKit
 import SwiftUI
 
 struct ContentView: View {
@@ -78,26 +79,31 @@ struct ContentView: View {
             }
 
             // Controls area
-            Button(action: { audioPlayer.togglePlayback() }) {
-                HStack(spacing: 8) {
-                    if audioPlayer.isBuffering {
-                        ProgressView()
-                            .controlSize(.small)
-                            .tint(.white)
-                        Text("Catching up…")
-                    } else {
-                        Image(systemName: audioPlayer.isPlaying ? "pause.fill" : "play.fill")
-                        Text(audioPlayer.isPlaying ? "Pause" : "Listen Live")
+            HStack(spacing: 12) {
+                Button(action: { audioPlayer.togglePlayback() }) {
+                    HStack(spacing: 8) {
+                        if audioPlayer.isBuffering {
+                            ProgressView()
+                                .controlSize(.small)
+                                .tint(.white)
+                            Text("Catching up…")
+                        } else {
+                            Image(systemName: audioPlayer.isPlaying ? "pause.fill" : "play.fill")
+                            Text(audioPlayer.isPlaying ? "Pause" : "Listen Live")
+                        }
                     }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 10)
+                    .background(Color(red: 0xfb/255.0, green: 0xad/255.0, blue: 0x18/255.0))
+                    .foregroundStyle(.black)
+                    .clipShape(Capsule())
                 }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 10)
-                .background(Color(red: 0xfb/255.0, green: 0xad/255.0, blue: 0x18/255.0))
-                .foregroundStyle(.black)
-                .clipShape(Capsule())
+                .buttonStyle(.plain)
+                .disabled(audioPlayer.isBuffering)
+
+                AirPlayButton(player: audioPlayer.player)
+                    .frame(width: 28, height: 28)
             }
-            .buttonStyle(.plain)
-            .disabled(audioPlayer.isBuffering)
         }
         .padding()
         .foregroundStyle(.white)
@@ -105,7 +111,28 @@ struct ContentView: View {
         .background(Color(red: 0x23/255.0, green: 0x1f/255.0, blue: 0x20/255.0))
         .onAppear { model.startPolling() }
         .onDisappear { model.stopPolling() }
+        .onChange(of: model.song) {
+            audioPlayer.updateNowPlayingInfo(
+                song: model.song,
+                artist: model.artist,
+                album: model.album,
+                artworkURL: model.thumbnailURL
+            )
+        }
     }
+}
+
+struct AirPlayButton: NSViewRepresentable {
+    let player: AVPlayer
+
+    func makeNSView(context: Context) -> AVRoutePickerView {
+        let picker = AVRoutePickerView()
+        picker.isRoutePickerButtonBordered = false
+        picker.player = player
+        return picker
+    }
+
+    func updateNSView(_ nsView: AVRoutePickerView, context: Context) {}
 }
 
 private func markdownWithLinks(_ text: String) -> AttributedString {
