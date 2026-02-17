@@ -15,7 +15,8 @@ class AudioPlayer {
     var isPlaying: Bool = false
     var isBuffering: Bool = false
 
-    private var player = AVPlayer(url: URL(string: "https://kexp.streamguys1.com/kexp160.aac")!)
+    private let streamURL = URL(string: "https://kexp.streamguys1.com/kexp160.aac")!
+    private var player = AVPlayer()
     private var observation: NSKeyValueObservation?
 
     init() {
@@ -48,12 +49,14 @@ class AudioPlayer {
     func togglePlayback() {
         if isPlaying || isBuffering {
             player.pause()
+        } else if let lastRange = player.currentItem?.loadedTimeRanges.last?.timeRangeValue {
+            // Buffer still has data — seek to live edge and resume (skips pre-roll)
+            let liveEdge = CMTimeAdd(lastRange.start, lastRange.duration)
+            player.seek(to: liveEdge)
+            player.play()
         } else {
-            // Seek to live edge then play
-            if let lastRange = player.currentItem?.loadedTimeRanges.last?.timeRangeValue {
-                let liveEdge = CMTimeAdd(lastRange.start, lastRange.duration)
-                player.seek(to: liveEdge)
-            }
+            // Buffer is stale/empty — need a fresh connection
+            player.replaceCurrentItem(with: AVPlayerItem(url: streamURL))
             player.play()
         }
     }

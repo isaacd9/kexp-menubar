@@ -21,9 +21,7 @@ struct ContentView: View {
                     .aspectRatio(contentMode: .fit)
                     .frame(height: 36)
 
-                Spacer()
-
-                VStack(alignment: .trailing, spacing: 2) {
+                VStack(alignment: .leading, spacing: 2) {
                     Text(model.programName.isEmpty ? "" : model.programName)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
@@ -34,6 +32,20 @@ struct ContentView: View {
                             .foregroundStyle(.tertiary)
                     }
                 }
+
+                Spacer()
+
+                Menu {
+                    Button("Quit KEXP") {
+                        NSApplication.shared.terminate(nil)
+                    }
+                } label: {
+                    Image(systemName: "gearshape.fill")
+                        .font(.system(size: 14))
+                        .foregroundStyle(.secondary)
+                }
+                .menuStyle(.borderlessButton)
+                .fixedSize()
             }
 
             // Album art area
