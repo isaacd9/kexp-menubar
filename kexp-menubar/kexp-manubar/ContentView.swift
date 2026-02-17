@@ -201,7 +201,8 @@ struct ContentView: View {
         }
         .padding()
         .foregroundStyle(.white)
-        .frame(minWidth: 360, maxWidth: .infinity, maxHeight: .infinity)
+        .frame(width: 360, alignment: .topLeading)
+        .fixedSize(horizontal: false, vertical: true)
         .background(Color(red: 0x23/255.0, green: 0x1f/255.0, blue: 0x20/255.0))
         .focusable()
         .focusEffectDisabled()
