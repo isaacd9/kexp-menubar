@@ -108,10 +108,19 @@ struct ContentView: View {
                         Text(model.comment)
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
-                            .lineLimit(3)
-                            .truncationMode(.tail)
                             .fixedSize(horizontal: false, vertical: true)
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .frame(maxWidth: .infinity, maxHeight: 80, alignment: .topLeading)
+                            .mask(
+                                VStack(spacing: 0) {
+                                    Color.white
+                                    LinearGradient(
+                                        colors: [.white, .clear],
+                                        startPoint: .top,
+                                        endPoint: .bottom
+                                    )
+                                    .frame(height: 30)
+                                }
+                            )
                             .padding(.horizontal, 10)
                             .padding(.top, 10)
                             .padding(.bottom, 4)
