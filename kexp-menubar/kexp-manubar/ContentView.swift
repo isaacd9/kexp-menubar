@@ -134,6 +134,7 @@ struct ContentView: View {
                 }
                 .background(Color.white.opacity(0.08))
                 .clipShape(RoundedRectangle(cornerRadius: 8))
+                .contentShape(RoundedRectangle(cornerRadius: 8))
                 .onTapGesture { commentExpanded.toggle() }
             }
 
