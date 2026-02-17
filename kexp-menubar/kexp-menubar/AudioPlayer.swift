@@ -76,6 +76,36 @@ class AudioPlayer {
         publishNowPlayingInfo()
     }
 
+    func reconnectStream() {
+        let shouldKeepWarmPaused = isSoftPaused
+        let shouldPlayAudibly = isPlaying || isBuffering
+
+        player.replaceCurrentItem(with: AVPlayerItem(url: streamURL))
+
+        if shouldKeepWarmPaused {
+            isSoftPaused = true
+            player.isMuted = true
+            player.play()
+            isPlaying = false
+            isBuffering = false
+            MPNowPlayingInfoCenter.default().playbackState = .paused
+            MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
+            return
+        }
+
+        isSoftPaused = false
+        player.isMuted = false
+        if shouldPlayAudibly {
+            player.play()
+            publishNowPlayingInfo()
+        } else {
+            player.pause()
+            isPlaying = false
+            isBuffering = false
+            MPNowPlayingInfoCenter.default().playbackState = .paused
+        }
+    }
+
     func updateNowPlayingInfo(song: String, artist: String, album: String, artworkURL: URL?) {
         lastNowPlayingInfo = [
             MPMediaItemPropertyTitle: song,
