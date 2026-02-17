@@ -111,12 +111,13 @@ class NowPlayingModel {
                 } else {
                     self.thumbnailURL = nil
                 }
-            }
 
-            // Fetch show info if the show changed
-            if let showUri = play.showUri, showUri != self.currentShowUri {
-                self.currentShowUri = showUri
-                self.fetchShow(uri: showUri)
+                // Fetch show info only when the show changes.
+                // Keep this on the main queue so polling responses cannot race each other.
+                if let showUri = play.showUri, showUri != self.currentShowUri {
+                    self.currentShowUri = showUri
+                    self.fetchShow(uri: showUri)
+                }
             }
         }.resume()
     }
@@ -133,6 +134,10 @@ class NowPlayingModel {
             guard let show = try? JSONDecoder().decode(Show.self, from: data) else { return }
 
             DispatchQueue.main.async {
+                guard self.currentShowUri == uri else {
+                    print("[NowPlaying] Ignoring stale show response for \(uri)")
+                    return
+                }
                 self.programName = show.programName ?? ""
                 self.hostNames = show.hostNames?.joined(separator: ", ") ?? ""
             }
