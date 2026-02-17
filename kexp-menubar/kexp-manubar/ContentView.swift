@@ -97,7 +97,7 @@ struct ContentView: View {
                     .foregroundStyle(.secondary)
                     .tint(Color(red: 0xfb/255.0, green: 0xad/255.0, blue: 0x18/255.0))
                     .fixedSize(horizontal: false, vertical: true)
-                    .frame(width: 260)
+                    .frame(maxWidth: .infinity)
                     .padding(10)
                     .background(Color.white.opacity(0.08))
                     .clipShape(RoundedRectangle(cornerRadius: 8))
@@ -127,7 +127,38 @@ struct ContentView: View {
                 .disabled(audioPlayer.isBuffering)
 
                 HStack {
+                    if !model.isAirbreak {
+                        Button(action: {
+                            let query = "\(model.song) \(model.artist)"
+                                .addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+                            if let url = URL(string: "music://music.apple.com/search?term=\(query)") {
+                                NSWorkspace.shared.open(url)
+                            }
+                        }) {
+                            Image("AppleMusicIcon")
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 20, height: 20)
+                        }
+                        .buttonStyle(.plain)
+
+                        Button(action: {
+                            let query = "\(model.song), \(model.artist)"
+                                .addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+                            if let url = URL(string: "spotify:search:\(query)") {
+                                NSWorkspace.shared.open(url)
+                            }
+                        }) {
+                            Image("SpotifyIcon")
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 20, height: 20)
+                        }
+                        .buttonStyle(.plain)
+                    }
+
                     Spacer()
+
                     AirPlayButton()
                         .frame(width: 28, height: 28)
                 }
@@ -135,7 +166,7 @@ struct ContentView: View {
         }
         .padding()
         .foregroundStyle(.white)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(minWidth: 360, maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(red: 0x23/255.0, green: 0x1f/255.0, blue: 0x20/255.0))
         .focusable()
         .focusEffectDisabled()
