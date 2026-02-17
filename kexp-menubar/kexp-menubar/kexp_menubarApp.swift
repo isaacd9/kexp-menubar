@@ -35,11 +35,12 @@ final class MenuBarPlaybackState: ObservableObject {
 
 @main
 struct kexp_menubarApp: App {
+    @State private var audioPlayer = AudioPlayer()
     @StateObject private var playbackState = MenuBarPlaybackState()
 
     var body: some Scene {
         MenuBarExtra {
-            ContentView()
+            ContentView(audioPlayer: audioPlayer)
         } label: {
             if playbackState.isLive {
                 Label("KEXP", systemImage: "dot.radiowaves.left.and.right")

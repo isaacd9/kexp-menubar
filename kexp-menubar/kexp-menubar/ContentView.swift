@@ -10,11 +10,11 @@ import SwiftUI
 
 struct ContentView: View {
     @State private var model = NowPlayingModel()
-    @State private var audioPlayer = AudioPlayer()
+    @Bindable var audioPlayer: AudioPlayer
     @State private var commentExpanded = false
     @AppStorage("playLocation") private var playLocation = 1
-    @State private var commentTextHeight: CGFloat = 0
     private let collapsedCommentHeight: CGFloat = 80
+    private let minCommentLengthForCollapse = 220
 
     var body: some View {
         VStack(spacing: 12) {
@@ -122,8 +122,9 @@ struct ContentView: View {
 
             // Host comment
             if !model.comment.isEmpty {
+                let isCommentCollapsible = shouldCollapseComment(model.comment)
                 VStack(spacing: 0) {
-                    if commentExpanded || commentTextHeight <= collapsedCommentHeight {
+                    if commentExpanded || !isCommentCollapsible {
                         Text(markdownWithLinks(model.comment))
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
@@ -160,35 +161,14 @@ struct ContentView: View {
                         .foregroundStyle(.tertiary)
                         .frame(maxWidth: .infinity)
                         .padding(.bottom, 6)
-                        .opacity(commentTextHeight > collapsedCommentHeight ? 1 : 0)
+                        .opacity(isCommentCollapsible ? 1 : 0)
                 }
                 .background(Color.white.opacity(0.08))
                 .clipShape(RoundedRectangle(cornerRadius: 8))
                 .contentShape(RoundedRectangle(cornerRadius: 8))
                 .onTapGesture {
-                    guard commentTextHeight > collapsedCommentHeight else { return }
+                    guard isCommentCollapsible else { return }
                     commentExpanded.toggle()
-                }
-                .background {
-                    Text(model.comment)
-                        .font(.subheadline)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 10)
-                        .padding(.top, 10)
-                        .padding(.bottom, 4)
-                        .hidden()
-                        .background(
-                            GeometryReader { proxy in
-                                Color.clear.preference(key: CommentTextHeightKey.self, value: proxy.size.height)
-                            }
-                        )
-                }
-                .onPreferenceChange(CommentTextHeightKey.self) { height in
-                    commentTextHeight = height
-                    if commentTextHeight <= collapsedCommentHeight {
-                        commentExpanded = false
-                    }
                 }
             }
 
@@ -293,12 +273,11 @@ struct AirPlayButton: NSViewRepresentable {
     func updateNSView(_ nsView: AVRoutePickerView, context: Context) {}
 }
 
-private struct CommentTextHeightKey: PreferenceKey {
-    static var defaultValue: CGFloat = 0
-
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = nextValue()
+private func shouldCollapseComment(_ comment: String) -> Bool {
+    if comment.count >= 220 {
+        return true
     }
+    return comment.split(whereSeparator: \.isNewline).count >= 5
 }
 
 private func markdownWithLinks(_ text: String) -> AttributedString {
@@ -340,5 +319,5 @@ private func markdownWithLinks(_ text: String) -> AttributedString {
 }
 
 #Preview {
-    ContentView()
+    ContentView(audioPlayer: AudioPlayer())
 }
