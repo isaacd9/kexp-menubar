@@ -1,6 +1,6 @@
 //
 //  ContentView.swift
-//  kexp-manubar
+//  kexp-menubar
 //
 //  Created by Isaac Diamond on 2/16/26.
 //
