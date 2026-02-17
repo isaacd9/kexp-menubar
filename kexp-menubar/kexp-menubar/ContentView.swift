@@ -12,6 +12,7 @@ struct ContentView: View {
     @State private var model = NowPlayingModel()
     @Bindable var audioPlayer: AudioPlayer
     @State private var commentExpanded = false
+    @State private var isShowHovered = false
     @AppStorage("playLocation") private var playLocation = 1
     private let collapsedCommentHeight: CGFloat = 80
     private let minCommentLengthForCollapse = 220
@@ -25,22 +26,25 @@ struct ContentView: View {
                     .aspectRatio(contentMode: .fit)
                     .frame(height: 30)
 
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: 6) {
+                VStack(alignment: .center, spacing: 2) {
+                    Button {
+                        if let url = URL(string: "https://www.kexp.org/playlist/") {
+                            NSWorkspace.shared.open(url)
+                        }
+                    } label: {
                         Text(model.programName.isEmpty ? "" : model.programName)
                             .font(.title3.weight(.semibold))
                             .foregroundStyle(.secondary)
-
-                        Button {
-                            if let url = URL(string: "https://www.kexp.org/playlist/") {
-                                NSWorkspace.shared.open(url)
-                            }
-                        } label: {
-                            Image(systemName: "link")
-                                .font(.caption)
-                                .foregroundStyle(.tertiary)
+                            .underline(isShowHovered && !model.programName.isEmpty)
+                    }
+                    .buttonStyle(.plain)
+                    .onHover { hovering in
+                        isShowHovered = hovering
+                        if hovering {
+                            NSCursor.pointingHand.push()
+                        } else {
+                            NSCursor.pop()
                         }
-                        .buttonStyle(.plain)
                     }
 
                     if !model.hostNames.isEmpty {
@@ -49,6 +53,8 @@ struct ContentView: View {
                             .foregroundStyle(.tertiary)
                     }
                 }
+                .frame(maxWidth: .infinity)
+                .multilineTextAlignment(.center)
 
                 Spacer()
 

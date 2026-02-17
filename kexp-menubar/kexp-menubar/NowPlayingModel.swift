@@ -139,7 +139,7 @@ class NowPlayingModel {
                     return
                 }
                 self.programName = show.programName ?? ""
-                self.hostNames = show.hostNames?.joined(separator: ", ") ?? ""
+                self.hostNames = show.hostNames?.joined(separator: " and ") ?? ""
             }
         }.resume()
     }
