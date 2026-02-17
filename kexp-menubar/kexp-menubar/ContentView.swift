@@ -53,17 +53,16 @@ struct ContentView: View {
                 Spacer()
 
                 Menu {
+                    Button("Reconnect Stream") {
+                        audioPlayer.reconnectStream()
+                    }
+
                     Picker("Location", selection: $playLocation) {
                         Text("Default").tag(1)
                         Text("Bay Area").tag(2)
                         Text("Seattle").tag(3)
                     }
 
-                    Divider()
-
-                    Button("Reconnect Stream") {
-                        audioPlayer.reconnectStream()
-                    }
 
                     Divider()
 
