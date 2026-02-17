@@ -18,6 +18,8 @@ class AudioPlayer {
     private let streamURL = URL(string: "https://kexp.streamguys1.com/kexp160.aac")!
     private var player = AVPlayer()
     private var observation: NSKeyValueObservation?
+    private var isSoftPaused = false
+    private var lastNowPlayingInfo: [String: Any] = [:]
 
     init() {
         configurePlayer()
@@ -25,8 +27,8 @@ class AudioPlayer {
         observation = player.observe(\.timeControlStatus) { [weak self] player, _ in
             DispatchQueue.main.async {
                 guard let self = self else { return }
-                self.isBuffering = player.timeControlStatus == .waitingToPlayAtSpecifiedRate
-                self.isPlaying = player.timeControlStatus == .playing
+                self.isBuffering = !self.isSoftPaused && player.timeControlStatus == .waitingToPlayAtSpecifiedRate
+                self.isPlaying = !self.isSoftPaused && player.timeControlStatus == .playing
                 MPNowPlayingInfoCenter.default().playbackState = self.isPlaying ? .playing : .paused
             }
         }
@@ -50,28 +52,69 @@ class AudioPlayer {
 
     func togglePlayback() {
         if isPlaying || isBuffering {
-            player.pause()
-        } else if let lastRange = player.currentItem?.loadedTimeRanges.last?.timeRangeValue {
+            softPause()
+            return
+        }
+
+        if isSoftPaused {
+            resumeFromSoftPause()
+            return
+        }
+
+        if let lastRange = player.currentItem?.loadedTimeRanges.last?.timeRangeValue {
             // Buffer still has data — seek to live edge and resume (skips pre-roll)
             let liveEdge = CMTimeAdd(lastRange.start, lastRange.duration)
             player.seek(to: liveEdge)
             player.play()
         } else {
-            // Buffer is stale/empty — need a fresh connection
+            // No active item yet — create connection once.
             player.replaceCurrentItem(with: AVPlayerItem(url: streamURL))
             player.play()
+        }
+        player.isMuted = false
+        isSoftPaused = false
+        publishNowPlayingInfo()
+    }
+
+    func reconnectStream() {
+        let shouldKeepWarmPaused = isSoftPaused
+        let shouldPlayAudibly = isPlaying || isBuffering
+
+        player.replaceCurrentItem(with: AVPlayerItem(url: streamURL))
+
+        if shouldKeepWarmPaused {
+            isSoftPaused = true
+            player.isMuted = true
+            player.play()
+            isPlaying = false
+            isBuffering = false
+            MPNowPlayingInfoCenter.default().playbackState = .paused
+            MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
+            return
+        }
+
+        isSoftPaused = false
+        player.isMuted = false
+        if shouldPlayAudibly {
+            player.play()
+            publishNowPlayingInfo()
+        } else {
+            player.pause()
+            isPlaying = false
+            isBuffering = false
+            MPNowPlayingInfoCenter.default().playbackState = .paused
         }
     }
 
     func updateNowPlayingInfo(song: String, artist: String, album: String, artworkURL: URL?) {
-        var info: [String: Any] = [
+        lastNowPlayingInfo = [
             MPMediaItemPropertyTitle: song,
             MPMediaItemPropertyArtist: artist,
             MPMediaItemPropertyAlbumTitle: album,
             MPNowPlayingInfoPropertyIsLiveStream: true,
         ]
 
-        MPNowPlayingInfoCenter.default().nowPlayingInfo = info
+        publishNowPlayingInfo()
 
         guard let artworkURL = artworkURL else { return }
         print("[NowPlaying] Fetching artwork from: \(artworkURL)")
@@ -92,8 +135,8 @@ class AudioPlayer {
             print("[NowPlaying] Artwork image created: \(image.size)")
             let artwork = MPMediaItemArtwork(boundsSize: image.size) { _ in image }
             DispatchQueue.main.async {
-                info[MPMediaItemPropertyArtwork] = artwork
-                MPNowPlayingInfoCenter.default().nowPlayingInfo = info
+                self.lastNowPlayingInfo[MPMediaItemPropertyArtwork] = artwork
+                self.publishNowPlayingInfo()
                 print("[NowPlaying] Now playing info updated with artwork")
             }
         }.resume()
@@ -102,5 +145,29 @@ class AudioPlayer {
     private func configurePlayer() {
         // Force local rendering so AirPlay routes app audio instead of remote URL handoff.
         player.allowsExternalPlayback = false
+    }
+
+    private func softPause() {
+        isSoftPaused = true
+        player.isMuted = true
+        isPlaying = false
+        isBuffering = false
+        MPNowPlayingInfoCenter.default().playbackState = .paused
+        MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
+    }
+
+    private func resumeFromSoftPause() {
+        isSoftPaused = false
+        player.isMuted = false
+        if player.currentItem == nil {
+            player.replaceCurrentItem(with: AVPlayerItem(url: streamURL))
+        }
+        player.play()
+        publishNowPlayingInfo()
+    }
+
+    private func publishNowPlayingInfo() {
+        guard !isSoftPaused else { return }
+        MPNowPlayingInfoCenter.default().nowPlayingInfo = lastNowPlayingInfo.isEmpty ? nil : lastNowPlayingInfo
     }
 }

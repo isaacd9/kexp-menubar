@@ -61,6 +61,12 @@ struct ContentView: View {
 
                     Divider()
 
+                    Button("Reconnect Stream") {
+                        audioPlayer.reconnectStream()
+                    }
+
+                    Divider()
+
                     Button("Quit KEXP") {
                         NSApplication.shared.terminate(nil)
                     }
