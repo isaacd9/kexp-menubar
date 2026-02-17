@@ -20,6 +20,8 @@ class AudioPlayer {
     private var observation: NSKeyValueObservation?
 
     init() {
+        configurePlayer()
+
         observation = player.observe(\.timeControlStatus) { [weak self] player, _ in
             DispatchQueue.main.async {
                 guard let self = self else { return }
@@ -95,5 +97,10 @@ class AudioPlayer {
                 print("[NowPlaying] Now playing info updated with artwork")
             }
         }.resume()
+    }
+
+    private func configurePlayer() {
+        // Force local rendering so AirPlay routes app audio instead of remote URL handoff.
+        player.allowsExternalPlayback = false
     }
 }
