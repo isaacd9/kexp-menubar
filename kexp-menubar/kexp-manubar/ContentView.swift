@@ -26,9 +26,22 @@ struct ContentView: View {
                     .frame(height: 30)
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(model.programName.isEmpty ? "" : model.programName)
-                        .font(.title3.weight(.semibold))
-                        .foregroundStyle(.secondary)
+                    HStack(spacing: 6) {
+                        Text(model.programName.isEmpty ? "" : model.programName)
+                            .font(.title3.weight(.semibold))
+                            .foregroundStyle(.secondary)
+
+                        Button {
+                            if let url = URL(string: "https://www.kexp.org/playlist/") {
+                                NSWorkspace.shared.open(url)
+                            }
+                        } label: {
+                            Image(systemName: "link")
+                                .font(.caption)
+                                .foregroundStyle(.tertiary)
+                        }
+                        .buttonStyle(.plain)
+                    }
 
                     if !model.hostNames.isEmpty {
                         Text("with \(model.hostNames)")
