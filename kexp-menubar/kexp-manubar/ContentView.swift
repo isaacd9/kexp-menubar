@@ -12,6 +12,7 @@ struct ContentView: View {
     @State private var model = NowPlayingModel()
     @State private var audioPlayer = AudioPlayer()
     @State private var commentExpanded = false
+    @AppStorage("playLocation") private var playLocation = 1
 
     var body: some View {
         VStack(spacing: 12) {
@@ -37,6 +38,14 @@ struct ContentView: View {
                 Spacer()
 
                 Menu {
+                    Picker("Location", selection: $playLocation) {
+                        Text("Default").tag(1)
+                        Text("Bay Area").tag(2)
+                        Text("Seattle").tag(3)
+                    }
+
+                    Divider()
+
                     Button("Quit KEXP") {
                         NSApplication.shared.terminate(nil)
                     }
@@ -210,8 +219,14 @@ struct ContentView: View {
             audioPlayer.togglePlayback()
             return .handled
         }
-        .onAppear { model.startPolling() }
+        .onAppear {
+            model.setLocation(playLocation)
+            model.startPolling()
+        }
         .onDisappear { model.stopPolling() }
+        .onChange(of: playLocation) {
+            model.setLocation(playLocation)
+        }
         .onChange(of: model.song) {
             audioPlayer.updateNowPlayingInfo(
                 song: model.song,

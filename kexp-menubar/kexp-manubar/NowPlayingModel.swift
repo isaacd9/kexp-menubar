@@ -51,8 +51,17 @@ class NowPlayingModel {
     var thumbnailURL: URL?
     var programName: String = ""
     var hostNames: String = ""
+    private var location: Int = 1
     private var timer: Timer?
     private var currentShowUri: String?
+
+    func setLocation(_ newLocation: Int) {
+        let clamped = max(1, min(3, newLocation))
+        guard location != clamped else { return }
+        location = clamped
+        currentShowUri = nil
+        fetch()
+    }
 
     func startPolling() {
         fetch()
@@ -67,7 +76,13 @@ class NowPlayingModel {
     }
 
     private func fetch() {
-        guard let url = URL(string: "https://api.kexp.org/v2/plays/?format=json&limit=1") else { return }
+        var components = URLComponents(string: "https://api.kexp.org/v2/plays/")
+        components?.queryItems = [
+            URLQueryItem(name: "format", value: "json"),
+            URLQueryItem(name: "limit", value: "1"),
+            URLQueryItem(name: "location", value: String(location)),
+        ]
+        guard let url = components?.url else { return }
 
         URLSession.shared.dataTask(with: url) { data, _, error in
             if let error = error {
