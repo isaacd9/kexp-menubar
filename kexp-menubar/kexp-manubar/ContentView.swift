@@ -11,6 +11,7 @@ import SwiftUI
 struct ContentView: View {
     @State private var model = NowPlayingModel()
     @State private var audioPlayer = AudioPlayer()
+    @State private var commentExpanded = false
 
     var body: some View {
         VStack(spacing: 12) {
@@ -92,15 +93,39 @@ struct ContentView: View {
 
             // Host comment
             if !model.comment.isEmpty {
-                Text(markdownWithLinks(model.comment))
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .tint(Color(red: 0xfb/255.0, green: 0xad/255.0, blue: 0x18/255.0))
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity)
-                    .padding(10)
-                    .background(Color.white.opacity(0.08))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                VStack(spacing: 0) {
+                    if commentExpanded {
+                        Text(markdownWithLinks(model.comment))
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .tint(Color(red: 0xfb/255.0, green: 0xad/255.0, blue: 0x18/255.0))
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 10)
+                            .padding(.top, 10)
+                            .padding(.bottom, 4)
+                    } else {
+                        Text(model.comment)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(3)
+                            .truncationMode(.tail)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 10)
+                            .padding(.top, 10)
+                            .padding(.bottom, 4)
+                    }
+
+                    Image(systemName: commentExpanded ? "chevron.up" : "chevron.down")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.bottom, 6)
+                }
+                .background(Color.white.opacity(0.08))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .onTapGesture { commentExpanded.toggle() }
             }
 
             // Controls area
