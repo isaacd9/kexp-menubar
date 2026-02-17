@@ -83,15 +83,21 @@ class NowPlayingModel {
             URLQueryItem(name: "location", value: String(location)),
         ]
         guard let url = components?.url else { return }
+        print("[NowPlaying] Plays request: \(url.absoluteString)")
 
-        URLSession.shared.dataTask(with: url) { data, _, error in
+        URLSession.shared.dataTask(with: url) { data, response, error in
             if let error = error {
                 print("[NowPlaying] Plays fetch error: \(error)")
                 return
             }
             guard let data = data else { return }
+            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
+            print("[NowPlaying] Plays response: status=\(statusCode), bytes=\(data.count)")
             guard let result = try? JSONDecoder().decode(PlayResult.self, from: data),
-                  let play = result.results.first else { return }
+                  let play = result.results.first else {
+                print("[NowPlaying] Plays decode failed or no results")
+                return
+            }
 
             DispatchQueue.main.async {
                 self.isAirbreak = play.playType == "airbreak"
