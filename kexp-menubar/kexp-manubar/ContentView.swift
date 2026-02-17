@@ -20,16 +20,16 @@ struct ContentView: View {
                 Image("KEXPLogo")
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .frame(height: 36)
+                    .frame(height: 30)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(model.programName.isEmpty ? "" : model.programName)
-                        .font(.subheadline)
+                        .font(.title3.weight(.semibold))
                         .foregroundStyle(.secondary)
 
                     if !model.hostNames.isEmpty {
                         Text("with \(model.hostNames)")
-                            .font(.caption)
+                            .font(.headline)
                             .foregroundStyle(.tertiary)
                     }
                 }
@@ -80,14 +80,14 @@ struct ContentView: View {
             // Song info
             VStack(spacing: 4) {
                 Text(model.song.isEmpty ? "—" : model.song)
-                    .font(.title3.bold())
+                    .font(.title2.bold())
 
                 Text(model.artist.isEmpty ? "—" : model.artist)
-                    .font(.headline)
+                    .font(.title3)
                     .foregroundStyle(.secondary)
 
                 Text(model.album.isEmpty ? "—" : model.releaseYear.isEmpty ? model.album : "\(model.album) — \(model.releaseYear)")
-                    .font(.subheadline)
+                    .font(.callout)
                     .foregroundStyle(.tertiary)
             }
 
