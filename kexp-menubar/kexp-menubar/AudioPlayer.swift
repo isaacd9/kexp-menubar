@@ -10,6 +10,10 @@ import AVFoundation
 import Foundation
 import MediaPlayer
 
+extension Notification.Name {
+    static let kexpPlaybackStateDidChange = Notification.Name("kexpPlaybackStateDidChange")
+}
+
 @Observable
 class AudioPlayer {
     var isPlaying: Bool = false
@@ -30,6 +34,7 @@ class AudioPlayer {
                 self.isBuffering = !self.isSoftPaused && player.timeControlStatus == .waitingToPlayAtSpecifiedRate
                 self.isPlaying = !self.isSoftPaused && player.timeControlStatus == .playing
                 MPNowPlayingInfoCenter.default().playbackState = self.isPlaying ? .playing : .paused
+                self.notifyPlaybackStateChanged()
             }
         }
 
@@ -90,6 +95,7 @@ class AudioPlayer {
             isBuffering = false
             MPNowPlayingInfoCenter.default().playbackState = .paused
             MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
+            notifyPlaybackStateChanged()
             return
         }
 
@@ -104,6 +110,7 @@ class AudioPlayer {
             isBuffering = false
             MPNowPlayingInfoCenter.default().playbackState = .paused
         }
+        notifyPlaybackStateChanged()
     }
 
     func updateNowPlayingInfo(song: String, artist: String, album: String, artworkURL: URL?) {
@@ -154,6 +161,7 @@ class AudioPlayer {
         isBuffering = false
         MPNowPlayingInfoCenter.default().playbackState = .paused
         MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
+        notifyPlaybackStateChanged()
     }
 
     private func resumeFromSoftPause() {
@@ -169,5 +177,16 @@ class AudioPlayer {
     private func publishNowPlayingInfo() {
         guard !isSoftPaused else { return }
         MPNowPlayingInfoCenter.default().nowPlayingInfo = lastNowPlayingInfo.isEmpty ? nil : lastNowPlayingInfo
+    }
+
+    private func notifyPlaybackStateChanged() {
+        NotificationCenter.default.post(
+            name: .kexpPlaybackStateDidChange,
+            object: nil,
+            userInfo: [
+                "isPlaying": isPlaying,
+                "isBuffering": isBuffering,
+            ]
+        )
     }
 }
