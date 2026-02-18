@@ -30,16 +30,7 @@ class AudioPlayer {
 
     init() {
         configurePlayer()
-
-        observation = player.observe(\.timeControlStatus) { [weak self] player, _ in
-            DispatchQueue.main.async {
-                guard let self = self else { return }
-                self.isBuffering = !self.isSoftPaused && player.timeControlStatus == .waitingToPlayAtSpecifiedRate
-                self.isPlaying = !self.isSoftPaused && player.timeControlStatus == .playing
-                MPNowPlayingInfoCenter.default().playbackState = self.isPlaying ? .playing : .paused
-                self.notifyPlaybackStateChanged()
-            }
-        }
+        observePlayer()
 
         let commandCenter = MPRemoteCommandCenter.shared()
         commandCenter.playCommand.addTarget { [weak self] _ in
@@ -163,6 +154,18 @@ class AudioPlayer {
         player.allowsExternalPlayback = false
     }
 
+    private func observePlayer() {
+        observation = player.observe(\.timeControlStatus) { [weak self] player, _ in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                self.isBuffering = !self.isSoftPaused && player.timeControlStatus == .waitingToPlayAtSpecifiedRate
+                self.isPlaying = !self.isSoftPaused && player.timeControlStatus == .playing
+                MPNowPlayingInfoCenter.default().playbackState = self.isPlaying ? .playing : .paused
+                self.notifyPlaybackStateChanged()
+            }
+        }
+    }
+
     private func softPause() {
         isSoftPaused = true
         softPausedAt = Date()
@@ -175,19 +178,22 @@ class AudioPlayer {
     }
 
     private func resumeFromSoftPause() {
-        if let softPausedAt,
-           maxSoftPauseBeforeReconnect > 0,
-           Date().timeIntervalSince(softPausedAt) > maxSoftPauseBeforeReconnect {
-            player.replaceCurrentItem(with: AVPlayerItem(url: streamURL))
-            hasInitializedStream = true
-        }
         isSoftPaused = false
+        let elapsed = softPausedAt.map { Date().timeIntervalSince($0) } ?? 0
         self.softPausedAt = nil
-        player.isMuted = false
-        if player.currentItem == nil {
-            player.replaceCurrentItem(with: AVPlayerItem(url: streamURL))
-            hasInitializedStream = true
+
+        let needsReconnect = maxSoftPauseBeforeReconnect > 0 && elapsed > maxSoftPauseBeforeReconnect
+        if needsReconnect || player.currentItem?.status == .failed {
+            observation = nil
+            player.pause()
+            player = AVPlayer()
+            configurePlayer()
+            observePlayer()
         }
+
+        player.replaceCurrentItem(with: AVPlayerItem(url: streamURL))
+        hasInitializedStream = true
+        player.isMuted = false
         player.play()
         publishNowPlayingInfo()
     }
