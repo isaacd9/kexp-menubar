@@ -206,7 +206,11 @@ struct ContentView: View {
                             Text("Catching up…")
                         } else {
                             Image(systemName: audioPlayer.isPlaying ? "pause.fill" : "play.fill")
-                            Text(audioPlayer.isPlaying ? "Pause" : "Listen Live")
+                            if audioPlayer.isPlaying {
+                                Text("Pause")
+                            } else {
+                                Text(audioPlayer.hasInitializedStream ? "Listen Live" : "Start Streaming")
+                            }
                         }
                     }
                     .padding(.horizontal, 20)

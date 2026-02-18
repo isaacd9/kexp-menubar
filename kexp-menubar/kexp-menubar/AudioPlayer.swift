@@ -18,6 +18,7 @@ extension Notification.Name {
 class AudioPlayer {
     var isPlaying: Bool = false
     var isBuffering: Bool = false
+    var hasInitializedStream: Bool = false
 
     private let streamURL = URL(string: "https://kexp.streamguys1.com/kexp160.aac")!
     private var player = AVPlayer()
@@ -76,6 +77,7 @@ class AudioPlayer {
         } else {
             // No active item yet — create connection once.
             player.replaceCurrentItem(with: AVPlayerItem(url: streamURL))
+            hasInitializedStream = true
             player.play()
         }
         player.isMuted = false
@@ -88,6 +90,7 @@ class AudioPlayer {
         let shouldPlayAudibly = isPlaying || isBuffering
 
         player.replaceCurrentItem(with: AVPlayerItem(url: streamURL))
+        hasInitializedStream = true
 
         if shouldKeepWarmPaused {
             isSoftPaused = true
@@ -176,12 +179,14 @@ class AudioPlayer {
            maxSoftPauseBeforeReconnect > 0,
            Date().timeIntervalSince(softPausedAt) > maxSoftPauseBeforeReconnect {
             player.replaceCurrentItem(with: AVPlayerItem(url: streamURL))
+            hasInitializedStream = true
         }
         isSoftPaused = false
         self.softPausedAt = nil
         player.isMuted = false
         if player.currentItem == nil {
             player.replaceCurrentItem(with: AVPlayerItem(url: streamURL))
+            hasInitializedStream = true
         }
         player.play()
         publishNowPlayingInfo()
