@@ -11,9 +11,14 @@ struct SettingsMenu: View {
     @Bindable var audioPlayer: AudioPlayer
     @Binding var playLocation: Int
     @Binding var autoReconnectSeconds: Int
+    @Binding var isCompact: Bool
 
     var body: some View {
         Menu {
+            Toggle("Compact Mode", isOn: $isCompact)
+
+            Divider()
+
             Button("Reconnect Stream") {
                 audioPlayer.reconnectStream()
             }

@@ -108,6 +108,7 @@ struct ContentView: View {
     @Bindable var audioPlayer: AudioPlayer
     @AppStorage("playLocation") private var playLocation = 1
     @AppStorage("autoReconnectSeconds") private var autoReconnectSeconds = 3600
+    @AppStorage("compactMode") private var isCompact = false  // passed to SettingsMenu only
 
     var body: some View {
         VStack(spacing: 12) {
@@ -161,12 +162,13 @@ struct ContentView: View {
                     SettingsMenu(
                         audioPlayer: audioPlayer,
                         playLocation: $playLocation,
-                        autoReconnectSeconds: $autoReconnectSeconds
+                        autoReconnectSeconds: $autoReconnectSeconds,
+                        isCompact: $isCompact
                     )
                 }
             }
 
-            // Album art area
+            // Album art
             ZStack {
                 RoundedRectangle(cornerRadius: 8)
                     .fill(.quaternary)
