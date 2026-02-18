@@ -33,10 +33,12 @@ nonisolated struct Play: Codable, Sendable {
 nonisolated struct Show: Codable, Sendable {
     let programName: String?
     let hostNames: [String]?
+    let imageUri: String?
 
     enum CodingKeys: String, CodingKey {
         case programName = "program_name"
         case hostNames = "host_names"
+        case imageUri = "image_uri"
     }
 }
 
@@ -51,6 +53,8 @@ class NowPlayingModel {
     var thumbnailURL: URL?
     var programName: String = ""
     var hostNames: String = ""
+    var hostImageURL: URL?
+    var showURL: URL?
     private var location: Int = 1
     private var timer: Timer?
     private var currentShowUri: String?
@@ -111,6 +115,11 @@ class NowPlayingModel {
                 } else {
                     self.thumbnailURL = nil
                 }
+                if let showUri = play.showUri, let showURL = URL(string: showUri) {
+                    self.showURL = showURL
+                } else {
+                    self.showURL = nil
+                }
 
                 // Fetch show info only when the show changes.
                 // Keep this on the main queue so polling responses cannot race each other.
@@ -140,6 +149,11 @@ class NowPlayingModel {
                 }
                 self.programName = show.programName ?? ""
                 self.hostNames = show.hostNames?.joined(separator: " and ") ?? ""
+                if let imageUri = show.imageUri, let imageURL = URL(string: imageUri) {
+                    self.hostImageURL = imageURL
+                } else {
+                    self.hostImageURL = nil
+                }
             }
         }.resume()
     }

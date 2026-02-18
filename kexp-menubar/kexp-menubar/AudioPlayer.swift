@@ -23,7 +23,9 @@ class AudioPlayer {
     private var player = AVPlayer()
     private var observation: NSKeyValueObservation?
     private var isSoftPaused = false
+    private var softPausedAt: Date?
     private var lastNowPlayingInfo: [String: Any] = [:]
+    private var maxSoftPauseBeforeReconnect: TimeInterval = 3600
 
     init() {
         configurePlayer()
@@ -113,6 +115,10 @@ class AudioPlayer {
         notifyPlaybackStateChanged()
     }
 
+    func setAutoReconnectInterval(_ seconds: TimeInterval) {
+        maxSoftPauseBeforeReconnect = max(0, seconds)
+    }
+
     func updateNowPlayingInfo(song: String, artist: String, album: String, artworkURL: URL?) {
         lastNowPlayingInfo = [
             MPMediaItemPropertyTitle: song,
@@ -156,6 +162,7 @@ class AudioPlayer {
 
     private func softPause() {
         isSoftPaused = true
+        softPausedAt = Date()
         player.isMuted = true
         isPlaying = false
         isBuffering = false
@@ -165,7 +172,13 @@ class AudioPlayer {
     }
 
     private func resumeFromSoftPause() {
+        if let softPausedAt,
+           maxSoftPauseBeforeReconnect > 0,
+           Date().timeIntervalSince(softPausedAt) > maxSoftPauseBeforeReconnect {
+            player.replaceCurrentItem(with: AVPlayerItem(url: streamURL))
+        }
         isSoftPaused = false
+        self.softPausedAt = nil
         player.isMuted = false
         if player.currentItem == nil {
             player.replaceCurrentItem(with: AVPlayerItem(url: streamURL))

@@ -12,40 +12,26 @@ struct ContentView: View {
     @State private var model = NowPlayingModel()
     @Bindable var audioPlayer: AudioPlayer
     @State private var commentExpanded = false
-    @State private var isShowHovered = false
     @AppStorage("playLocation") private var playLocation = 1
+    @AppStorage("autoReconnectSeconds") private var autoReconnectSeconds = 3600
     private let collapsedCommentHeight: CGFloat = 80
     private let minCommentLengthForCollapse = 220
 
     var body: some View {
         VStack(spacing: 12) {
             // Header
-            HStack {
-                Image("KEXPLogo")
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(height: 30)
-
+            ZStack {
                 VStack(alignment: .center, spacing: 2) {
                     Button {
                         if let url = URL(string: "https://www.kexp.org/playlist/") {
                             NSWorkspace.shared.open(url)
                         }
                     } label: {
-                        Text(model.programName.isEmpty ? "" : model.programName)
+                        Text(model.programName)
                             .font(.title3.weight(.semibold))
                             .foregroundStyle(.secondary)
-                            .underline(isShowHovered && !model.programName.isEmpty)
                     }
                     .buttonStyle(.plain)
-                    .onHover { hovering in
-                        isShowHovered = hovering
-                        if hovering {
-                            NSCursor.pointingHand.push()
-                        } else {
-                            NSCursor.pop()
-                        }
-                    }
 
                     if !model.hostNames.isEmpty {
                         Text("with \(model.hostNames)")
@@ -53,35 +39,66 @@ struct ContentView: View {
                             .foregroundStyle(.tertiary)
                     }
                 }
-                .frame(maxWidth: .infinity)
                 .multilineTextAlignment(.center)
 
-                Spacer()
+                HStack {
+                    HStack(spacing: 8) {
+                        Image("KEXPLogo")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(height: 30)
 
-                Menu {
-                    Button("Reconnect Stream") {
-                        audioPlayer.reconnectStream()
+                        if let hostImageURL = model.hostImageURL {
+                            AsyncImage(url: hostImageURL) { image in
+                                image
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
+                            } placeholder: {
+                                Image(systemName: "person.crop.circle.fill")
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                                    .foregroundStyle(.tertiary)
+                            }
+                            .frame(width: 28, height: 28)
+                            .clipShape(Circle())
+                        }
                     }
 
-                    Picker("Location", selection: $playLocation) {
-                        Text("Default").tag(1)
-                        Text("Bay Area").tag(2)
-                        Text("Seattle").tag(3)
+                    Spacer()
+
+                    Menu {
+                        Button("Reconnect Stream") {
+                            audioPlayer.reconnectStream()
+                        }
+
+                        Picker("Location", selection: $playLocation) {
+                            Text("Default").tag(1)
+                            Text("Bay Area").tag(2)
+                            Text("Seattle").tag(3)
+                        }
+
+                        Picker("Auto-Reconnect After Pause", selection: $autoReconnectSeconds) {
+                            Text("Never").tag(0)
+                            Text("5m").tag(300)
+                            Text("10m").tag(600)
+                            Text("30m").tag(1800)
+                            Text("60m").tag(3600)
+                        }
+
+
+                        Divider()
+
+                        Button("Quit KEXP") {
+                            NSApplication.shared.terminate(nil)
+                        }
+                    } label: {
+                        Image(systemName: "gearshape.fill")
+                            .font(.system(size: 14))
+                            .foregroundStyle(.secondary)
                     }
-
-
-                    Divider()
-
-                    Button("Quit KEXP") {
-                        NSApplication.shared.terminate(nil)
-                    }
-                } label: {
-                    Image(systemName: "gearshape.fill")
-                        .font(.system(size: 14))
-                        .foregroundStyle(.secondary)
+                    .menuStyle(.borderlessButton)
+                    .fixedSize()
                 }
-                .menuStyle(.borderlessButton)
-                .fixedSize()
             }
 
             // Album art area
@@ -252,11 +269,15 @@ struct ContentView: View {
         }
         .onAppear {
             model.setLocation(playLocation)
+            audioPlayer.setAutoReconnectInterval(TimeInterval(autoReconnectSeconds))
             model.startPolling()
         }
         .onDisappear { model.stopPolling() }
         .onChange(of: playLocation) {
             model.setLocation(playLocation)
+        }
+        .onChange(of: autoReconnectSeconds) {
+            audioPlayer.setAutoReconnectInterval(TimeInterval(autoReconnectSeconds))
         }
         .onChange(of: model.song) {
             audioPlayer.updateNowPlayingInfo(
@@ -308,6 +329,7 @@ private func markdownWithLinks(_ text: String) -> AttributedString {
         if let url = URL(string: urlString) {
             var link = AttributedString(urlString)
             link.link = url
+            link.underlineStyle = .single
             result.append(link)
         } else {
             result.append(AttributedString(urlString))
