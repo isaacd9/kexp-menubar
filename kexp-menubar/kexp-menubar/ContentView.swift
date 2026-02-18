@@ -104,7 +104,7 @@ struct CommentView: View {
 }
 
 struct ContentView: View {
-    @State private var model = NowPlayingModel()
+    var model: NowPlayingModel
     @Bindable var audioPlayer: AudioPlayer
     @AppStorage("playLocation") private var playLocation = 1
     @AppStorage("autoReconnectSeconds") private var autoReconnectSeconds = 3600
@@ -259,5 +259,5 @@ struct ContentView: View {
 
 
 #Preview {
-    ContentView(audioPlayer: AudioPlayer())
+    ContentView(model: NowPlayingModel(), audioPlayer: AudioPlayer())
 }

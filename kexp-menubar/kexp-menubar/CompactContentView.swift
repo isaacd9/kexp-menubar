@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct CompactContentView: View {
-    @State private var model = NowPlayingModel()
+    var model: NowPlayingModel
     @Bindable var audioPlayer: AudioPlayer
     @AppStorage("playLocation") private var playLocation = 1
     @AppStorage("autoReconnectSeconds") private var autoReconnectSeconds = 3600
@@ -128,7 +128,7 @@ struct CompactContentView: View {
         }
         .padding()
         .foregroundStyle(.white)
-        .frame(width: 384, alignment: .topLeading)
+        .frame(width: 360, alignment: .topLeading)
         .fixedSize(horizontal: false, vertical: true)
         .background(Color(red: 0x23/255.0, green: 0x1f/255.0, blue: 0x20/255.0))
         .focusable()

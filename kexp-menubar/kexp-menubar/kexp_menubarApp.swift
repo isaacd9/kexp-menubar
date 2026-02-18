@@ -36,15 +36,16 @@ final class MenuBarPlaybackState: ObservableObject {
 @main
 struct kexp_menubarApp: App {
     @State private var audioPlayer = AudioPlayer()
+    @State private var model = NowPlayingModel()
     @StateObject private var playbackState = MenuBarPlaybackState()
     @AppStorage("compactMode") private var isCompact = false
 
     var body: some Scene {
         MenuBarExtra {
             if isCompact {
-                CompactContentView(audioPlayer: audioPlayer)
+                CompactContentView(model: model, audioPlayer: audioPlayer)
             } else {
-                ContentView(audioPlayer: audioPlayer)
+                ContentView(model: model, audioPlayer: audioPlayer)
             }
         } label: {
             if playbackState.isLive {
