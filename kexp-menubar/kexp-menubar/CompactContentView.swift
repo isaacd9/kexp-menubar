@@ -13,6 +13,7 @@ struct CompactContentView: View {
     @AppStorage("playLocation") private var playLocation = 1
     @AppStorage("autoReconnectSeconds") private var autoReconnectSeconds = 3600
     @AppStorage("compactMode") private var isCompact = false
+    @State private var programNameHovered = false
 
     var body: some View {
         VStack(spacing: 12) {
@@ -27,8 +28,13 @@ struct CompactContentView: View {
                         Text(model.programName)
                             .font(.title3.weight(.semibold))
                             .foregroundStyle(.secondary)
+                            .underline(programNameHovered)
                     }
                     .buttonStyle(.plain)
+                    .onHover { hovering in
+                        programNameHovered = hovering
+                        if hovering { NSCursor.pointingHand.push() } else { NSCursor.pop() }
+                    }
 
                     if !model.hostNames.isEmpty {
                         Text("with \(model.hostNames)")
