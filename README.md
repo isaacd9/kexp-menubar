@@ -18,6 +18,7 @@ performance and better user experience.
 - Soft pauses for the stream, to prevent the welcome message from interrupting
   the music when only pausing the stream briefly. The stream will automatically
   reconnect if it has been paused for a long time and the buffer goes stale.
+- Airplay support for streaming to your AirPlay devices.
 - Links to open the current song in Spotify, and Apple Music.
 - Selectable location for show information, to indicate if you're listening to KEXP (Seattle), or KEXC (San Francisco).
 - A compact mode, which hides the DJ comment and show information.
