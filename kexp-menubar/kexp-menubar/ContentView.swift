@@ -5,7 +5,128 @@
 //  Created by Isaac Diamond on 2/16/26.
 //
 
+import AppKit
 import SwiftUI
+
+class TappableTextView: NSTextView {
+    var onTap: (() -> Void)?
+
+    override func mouseDown(with event: NSEvent) {
+        let point = convert(event.locationInWindow, from: nil)
+
+        guard let layoutManager = layoutManager,
+              let textContainer = textContainer,
+              let textStorage = textStorage else {
+            onTap?()
+            return
+        }
+
+        let charIndex = layoutManager.characterIndex(
+            for: point,
+            in: textContainer,
+            fractionOfDistanceBetweenInsertionPoints: nil
+        )
+
+        guard charIndex < textStorage.length else {
+            onTap?()
+            return
+        }
+
+        let linkAttr = textStorage.attribute(.link, at: charIndex, effectiveRange: nil)
+        let url: URL? = (linkAttr as? URL)
+            ?? (linkAttr as? NSURL as URL?)
+            ?? (linkAttr as? String).flatMap(URL.init(string:))
+
+        if let url {
+            NSWorkspace.shared.open(url)
+        } else {
+            onTap?()
+        }
+        // Never call super — NSTextView's mouseDown enters a blocking tracking loop
+        // in MenuBarExtra context that hangs the app.
+    }
+}
+
+struct CommentTextView: NSViewRepresentable {
+    let comment: String
+    var onTap: (() -> Void)?
+
+    func makeNSView(context: Context) -> TappableTextView {
+        let textView = TappableTextView()
+        textView.isEditable = false
+        textView.isSelectable = true
+        textView.drawsBackground = false
+        textView.textContainerInset = .zero
+        textView.textContainer?.lineFragmentPadding = 0
+        textView.linkTextAttributes = [
+            .foregroundColor: NSColor(red: 0xfb/255.0, green: 0xad/255.0, blue: 0x18/255.0, alpha: 1.0),
+            .underlineStyle: NSUnderlineStyle.single.rawValue,
+        ]
+        return textView
+    }
+
+    func updateNSView(_ textView: TappableTextView, context: Context) {
+        textView.textStorage?.setAttributedString(makeAttributedString())
+        textView.onTap = onTap
+    }
+
+    func sizeThatFits(_ proposal: ProposedViewSize, nsView: TappableTextView, context: Context) -> CGSize? {
+        guard let width = proposal.width, width > 0 else { return nil }
+        let bounds = makeAttributedString().boundingRect(
+            with: CGSize(width: width, height: .greatestFiniteMagnitude),
+            options: [.usesLineFragmentOrigin, .usesFontLeading]
+        )
+        return CGSize(width: width, height: ceil(bounds.height))
+    }
+
+    private static let urlRegex = try? NSRegularExpression(pattern: #"https?://[^\s\)\]>]+"#)
+
+    private func makeAttributedString() -> NSAttributedString {
+        guard let regex = Self.urlRegex else {
+            return NSAttributedString(string: comment, attributes: defaultAttrs)
+        }
+
+        let result = NSMutableAttributedString()
+        let nsText = comment as NSString
+        var lastEnd = 0
+
+        for match in regex.matches(in: comment, range: NSRange(location: 0, length: nsText.length)) {
+            if match.range.location > lastEnd {
+                let plain = nsText.substring(with: NSRange(location: lastEnd, length: match.range.location - lastEnd))
+                result.append(NSAttributedString(string: plain, attributes: defaultAttrs))
+            }
+            let urlString = nsText.substring(with: match.range)
+            if let url = URL(string: urlString) {
+                result.append(NSAttributedString(string: urlString, attributes: linkAttrs(url: url)))
+            } else {
+                result.append(NSAttributedString(string: urlString, attributes: defaultAttrs))
+            }
+            lastEnd = match.range.location + match.range.length
+        }
+
+        if lastEnd < nsText.length {
+            result.append(NSAttributedString(string: nsText.substring(from: lastEnd), attributes: defaultAttrs))
+        }
+
+        return result
+    }
+
+    private var defaultAttrs: [NSAttributedString.Key: Any] {
+        [
+            .font: NSFont.systemFont(ofSize: 13),
+            .foregroundColor: NSColor(white: 1.0, alpha: 0.6),
+        ]
+    }
+
+    private func linkAttrs(url: URL) -> [NSAttributedString.Key: Any] {
+        [
+            .font: NSFont.systemFont(ofSize: 13),
+            .foregroundColor: NSColor(red: 0xfb/255.0, green: 0xad/255.0, blue: 0x18/255.0, alpha: 1.0),
+            .link: url,
+            .underlineStyle: NSUnderlineStyle.single.rawValue,
+        ]
+    }
+}
 
 struct CommentView: View {
     let comment: String
@@ -15,36 +136,21 @@ struct CommentView: View {
     var body: some View {
         let isCollapsible = shouldCollapseComment(comment)
         VStack(spacing: 0) {
-            if expanded || !isCollapsible {
-                Text(markdownWithLinks(comment))
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .tint(Color(red: 0xfb/255.0, green: 0xad/255.0, blue: 0x18/255.0))
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 10)
-                    .padding(.top, 10)
-                    .padding(.bottom, 4)
-            } else {
-                Text(comment)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity, maxHeight: collapsedHeight, alignment: .topLeading)
-                    .mask(
-                        VStack(spacing: 0) {
-                            Color.white
-                            LinearGradient(
-                                colors: [.white, .clear],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
+            let textView = CommentTextView(comment: comment, onTap: isCollapsible ? { expanded.toggle() } : nil)
+                .frame(maxWidth: .infinity, maxHeight: !expanded && isCollapsible ? collapsedHeight : nil, alignment: .topLeading)
+                .padding(.horizontal, 10)
+                .padding(.top, 10)
+                .padding(.bottom, 4)
+            if !expanded && isCollapsible {
+                textView.mask {
+                    VStack(spacing: 0) {
+                        Color.white
+                        LinearGradient(colors: [.white, .clear], startPoint: .top, endPoint: .bottom)
                             .frame(height: 30)
-                        }
-                    )
-                    .padding(.horizontal, 10)
-                    .padding(.top, 10)
-                    .padding(.bottom, 4)
+                    }
+                }
+            } else {
+                textView
             }
 
             Image(systemName: expanded ? "chevron.up" : "chevron.down")
@@ -53,53 +159,17 @@ struct CommentView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.bottom, 6)
                 .opacity(isCollapsible ? 1 : 0)
+                .onTapGesture {
+                    guard isCollapsible else { return }
+                    expanded.toggle()
+                }
         }
         .background(Color.white.opacity(0.08))
         .clipShape(RoundedRectangle(cornerRadius: 8))
-        .contentShape(RoundedRectangle(cornerRadius: 8))
-        .onTapGesture {
-            guard isCollapsible else { return }
-            expanded.toggle()
-        }
     }
 
     private func shouldCollapseComment(_ comment: String) -> Bool {
         comment.count >= 220 || comment.split(whereSeparator: \.isNewline).count >= 5
-    }
-
-    private func markdownWithLinks(_ text: String) -> AttributedString {
-        let pattern = #"https?://[^\s\)\]>]+"#
-        guard let regex = try? NSRegularExpression(pattern: pattern) else {
-            return AttributedString(text)
-        }
-
-        var result = AttributedString()
-        let nsText = text as NSString
-        var lastEnd = 0
-
-        let matches = regex.matches(in: text, range: NSRange(location: 0, length: nsText.length))
-        for match in matches {
-            if match.range.location > lastEnd {
-                let plain = nsText.substring(with: NSRange(location: lastEnd, length: match.range.location - lastEnd))
-                result.append(AttributedString(plain))
-            }
-            let urlString = nsText.substring(with: match.range)
-            if let url = URL(string: urlString) {
-                var link = AttributedString(urlString)
-                link.link = url
-                link.underlineStyle = .single
-                result.append(link)
-            } else {
-                result.append(AttributedString(urlString))
-            }
-            lastEnd = match.range.location + match.range.length
-        }
-
-        if lastEnd < nsText.length {
-            result.append(AttributedString(nsText.substring(from: lastEnd)))
-        }
-
-        return result
     }
 }
 
