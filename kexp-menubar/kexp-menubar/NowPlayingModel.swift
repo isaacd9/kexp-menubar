@@ -111,10 +111,14 @@ class NowPlayingModel {
                 self.album = self.isAirbreak ? "" : (play.album ?? "")
                 self.releaseYear = self.isAirbreak ? "" : String(play.releaseDate?.prefix(4) ?? "")
                 self.comment = play.comment ?? ""
+                let oldThumb = self.thumbnailURL
                 if let thumb = play.thumbnailUri, let thumbURL = URL(string: thumb) {
                     self.thumbnailURL = thumbURL
                 } else {
                     self.thumbnailURL = nil
+                }
+                if self.thumbnailURL != oldThumb {
+                    print("[NowPlaying] thumbnailURL changed: \(oldThumb?.absoluteString ?? "nil") -> \(self.thumbnailURL?.absoluteString ?? "nil")")
                 }
                 if let showUri = play.showUri, let showURL = URL(string: showUri) {
                     self.showURL = showURL

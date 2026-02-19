@@ -254,14 +254,22 @@ struct ContentView: View {
                         .resizable()
                         .aspectRatio(contentMode: .fill)
                 } else if let url = model.thumbnailURL {
-                    AsyncImage(url: url) { image in
-                        image
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                    } placeholder: {
-                        Image(systemName: "music.note")
-                            .font(.system(size: 32))
-                            .foregroundStyle(.secondary)
+                    AsyncImage(url: url) { phase in
+                        switch phase {
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                        case .failure(let error):
+                            let _ = print("[AlbumArt] Failed to load \(url): \(error)")
+                            Image(systemName: "music.note")
+                                .font(.system(size: 32))
+                                .foregroundStyle(.secondary)
+                        default:
+                            Image(systemName: "music.note")
+                                .font(.system(size: 32))
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 } else {
                     Image(systemName: "music.note")
@@ -269,6 +277,7 @@ struct ContentView: View {
                         .foregroundStyle(.secondary)
                 }
             }
+            .id(model.thumbnailURL)
             .frame(width: 280, height: 280)
             .clipShape(RoundedRectangle(cornerRadius: 8))
 

@@ -190,8 +190,10 @@ class AudioPlayer {
             configurePlayer()
             observePlayer()
             player.replaceCurrentItem(with: AVPlayerItem(url: streamURL))
+            hasInitializedStream = true
         } else if player.currentItem == nil {
             player.replaceCurrentItem(with: AVPlayerItem(url: streamURL))
+            hasInitializedStream = true
         }
 
         player.isMuted = false

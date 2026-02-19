@@ -89,14 +89,22 @@ struct CompactContentView: View {
                             .resizable()
                             .aspectRatio(contentMode: .fill)
                     } else if let url = model.thumbnailURL {
-                        AsyncImage(url: url) { image in
-                            image
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                        } placeholder: {
-                            Image(systemName: "music.note")
-                                .font(.system(size: 16))
-                                .foregroundStyle(.secondary)
+                        AsyncImage(url: url) { phase in
+                            switch phase {
+                            case .success(let image):
+                                image
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
+                            case .failure(let error):
+                                let _ = print("[AlbumArt] Failed to load \(url): \(error)")
+                                Image(systemName: "music.note")
+                                    .font(.system(size: 16))
+                                    .foregroundStyle(.secondary)
+                            default:
+                                Image(systemName: "music.note")
+                                    .font(.system(size: 16))
+                                    .foregroundStyle(.secondary)
+                            }
                         }
                     } else {
                         Image(systemName: "music.note")
@@ -104,6 +112,7 @@ struct CompactContentView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
+                .id(model.thumbnailURL)
                 .frame(width: 72, height: 72)
                 .clipShape(RoundedRectangle(cornerRadius: 6))
 
