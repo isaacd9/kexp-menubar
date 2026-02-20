@@ -63,7 +63,7 @@ struct CommentTextView: NSViewRepresentable {
         textView.textContainer?.widthTracksTextView = true
         textView.textContainer?.heightTracksTextView = false
         textView.linkTextAttributes = [
-            .foregroundColor: NSColor(red: 0xfb/255.0, green: 0xad/255.0, blue: 0x18/255.0, alpha: 1.0),
+            .foregroundColor: NSColor.kexpOrange,
             .underlineStyle: NSUnderlineStyle.single.rawValue,
         ]
         return textView
@@ -126,7 +126,7 @@ struct CommentTextView: NSViewRepresentable {
     private func linkAttrs(url: URL) -> [NSAttributedString.Key: Any] {
         [
             .font: NSFont.systemFont(ofSize: 13),
-            .foregroundColor: NSColor(red: 0xfb/255.0, green: 0xad/255.0, blue: 0x18/255.0, alpha: 1.0),
+            .foregroundColor: NSColor.kexpOrange,
             .link: url,
             .underlineStyle: NSUnderlineStyle.single.rawValue,
         ]
@@ -182,8 +182,8 @@ struct CommentView: View {
 struct ContentView: View {
     var model: NowPlayingModel
     @Bindable var audioPlayer: AudioPlayer
-    @AppStorage("playLocation") private var playLocation = 1
-    @AppStorage("autoReconnectSeconds") private var autoReconnectSeconds = 3600
+    @AppStorage("playLocation") private var playLocation = AppDefaults.playLocation
+    @AppStorage("autoReconnectSeconds") private var autoReconnectSeconds = AppDefaults.autoReconnectSeconds
     @AppStorage("compactMode") private var isCompact = false  // passed to SettingsMenu only
     @State private var programNameHovered = false
 
@@ -318,7 +318,7 @@ struct ContentView: View {
         .foregroundStyle(.white)
         .frame(width: 360, alignment: .topLeading)
         .fixedSize(horizontal: false, vertical: true)
-        .background(Color(red: 0x23/255.0, green: 0x1f/255.0, blue: 0x20/255.0))
+        .background(Color.kexpBackground)
         .focusable()
         .focusEffectDisabled()
         .onKeyPress(.space) {

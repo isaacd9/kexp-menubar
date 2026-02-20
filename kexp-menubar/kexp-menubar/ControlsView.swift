@@ -33,7 +33,7 @@ struct ControlsView: View {
                 }
                 .padding(.horizontal, 20)
                 .padding(.vertical, 10)
-                .background(Color(red: 0xfb/255.0, green: 0xad/255.0, blue: 0x18/255.0))
+                .background(Color.kexpOrange)
                 .foregroundStyle(.black)
                 .clipShape(Capsule())
             }

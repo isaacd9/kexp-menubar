@@ -7,11 +7,11 @@
 
 import Foundation
 
-nonisolated struct PlayResult: Codable, Sendable {
+struct PlayResult: Codable, Sendable {
     let results: [Play]
 }
 
-nonisolated struct Play: Codable, Sendable {
+struct Play: Codable, Sendable {
     let song: String?
     let artist: String?
     let album: String?
@@ -30,7 +30,7 @@ nonisolated struct Play: Codable, Sendable {
     }
 }
 
-nonisolated struct Show: Codable, Sendable {
+struct Show: Codable, Sendable {
     let programName: String?
     let hostNames: [String]?
     let imageUri: String?

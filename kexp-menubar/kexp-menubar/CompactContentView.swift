@@ -10,8 +10,8 @@ import SwiftUI
 struct CompactContentView: View {
     var model: NowPlayingModel
     @Bindable var audioPlayer: AudioPlayer
-    @AppStorage("playLocation") private var playLocation = 1
-    @AppStorage("autoReconnectSeconds") private var autoReconnectSeconds = 3600
+    @AppStorage("playLocation") private var playLocation = AppDefaults.playLocation
+    @AppStorage("autoReconnectSeconds") private var autoReconnectSeconds = AppDefaults.autoReconnectSeconds
     @AppStorage("compactMode") private var isCompact = false
     @State private var programNameHovered = false
 
@@ -145,7 +145,7 @@ struct CompactContentView: View {
         .foregroundStyle(.white)
         .frame(width: 360, alignment: .topLeading)
         .fixedSize(horizontal: false, vertical: true)
-        .background(Color(red: 0x23/255.0, green: 0x1f/255.0, blue: 0x20/255.0))
+        .background(Color.kexpBackground)
         .focusable()
         .focusEffectDisabled()
         .onKeyPress(.space) {
