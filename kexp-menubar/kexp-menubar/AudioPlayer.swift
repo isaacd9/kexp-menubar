@@ -19,6 +19,7 @@ class AudioPlayer {
     var isPlaying: Bool = false
     var isBuffering: Bool = false
     var hasInitializedStream: Bool = false
+    var volume: Float = (UserDefaults.standard.object(forKey: "streamVolume") as? Float) ?? 1.0
 
     private let streamURL = URL(string: "https://kexp.streamguys1.com/kexp160.aac")!
     private var player = AVPlayer()
@@ -113,6 +114,12 @@ class AudioPlayer {
         maxSoftPauseBeforeReconnect = max(0, seconds)
     }
 
+    func setVolume(_ newVolume: Float) {
+        volume = max(0, min(1, newVolume))
+        player.volume = volume
+        UserDefaults.standard.set(volume, forKey: "streamVolume")
+    }
+
     func updateNowPlayingInfo(song: String, artist: String, album: String, artworkURL: URL?) {
         lastNowPlayingInfo = [
             MPMediaItemPropertyTitle: song,
@@ -152,6 +159,7 @@ class AudioPlayer {
     private func configurePlayer() {
         // Force local rendering so AirPlay routes app audio instead of remote URL handoff.
         player.allowsExternalPlayback = false
+        player.volume = volume
     }
 
     private func observePlayer() {
