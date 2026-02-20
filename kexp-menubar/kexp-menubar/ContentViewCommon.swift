@@ -91,6 +91,9 @@ struct AlbumArtView: View {
     var cornerRadius: CGFloat = 8
     var iconSize: CGFloat = 32
 
+    @State private var retryCount = 0
+    private let maxRetries = 2
+
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: cornerRadius)
@@ -108,16 +111,24 @@ struct AlbumArtView: View {
                             .resizable()
                             .aspectRatio(contentMode: .fill)
                     case .failure(let error):
-                        let _ = print("[AlbumArt] Failed to load \(url): \(error)")
+                        let _ = print("[AlbumArt] Failed to load \(url) (attempt \(retryCount + 1)): \(error)")
                         Image(systemName: "music.note")
                             .font(.system(size: iconSize))
                             .foregroundStyle(.secondary)
+                            .onAppear {
+                                if retryCount < maxRetries {
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                                        retryCount += 1
+                                    }
+                                }
+                            }
                     default:
                         Image(systemName: "music.note")
                             .font(.system(size: iconSize))
                             .foregroundStyle(.secondary)
                     }
                 }
+                .id(retryCount)
             } else {
                 Image(systemName: "music.note")
                     .font(.system(size: iconSize))
@@ -127,6 +138,7 @@ struct AlbumArtView: View {
         .id(thumbnailURL)
         .frame(width: size, height: size)
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+        .onChange(of: thumbnailURL) { retryCount = 0 }
     }
 }
 
@@ -157,9 +169,9 @@ struct KEXPWindowModifier: ViewModifier {
             .onAppear {
                 model.setLocation(playLocation)
                 audioPlayer.setAutoReconnectInterval(TimeInterval(autoReconnectSeconds))
-                model.startPolling()
+                model.startPolling(interval: 1)
             }
-            .onDisappear { model.stopPolling() }
+            .onDisappear { model.startPolling(interval: 3) }
             .onChange(of: playLocation) {
                 model.setLocation(playLocation)
             }

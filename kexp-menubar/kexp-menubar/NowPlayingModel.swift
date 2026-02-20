@@ -67,10 +67,10 @@ class NowPlayingModel {
         fetch()
     }
 
-    func startPolling() {
+    func startPolling(interval: TimeInterval = 1.0) {
         stopPolling()
         fetch()
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+        timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { _ in
             self.fetch()
         }
     }

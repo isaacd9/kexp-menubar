@@ -181,7 +181,6 @@ class AudioPlayer {
         isPlaying = false
         isBuffering = false
         MPNowPlayingInfoCenter.default().playbackState = .paused
-        MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
         notifyPlaybackStateChanged()
     }
 
@@ -210,7 +209,6 @@ class AudioPlayer {
     }
 
     private func publishNowPlayingInfo() {
-        guard !isSoftPaused else { return }
         MPNowPlayingInfoCenter.default().nowPlayingInfo = lastNowPlayingInfo.isEmpty ? nil : lastNowPlayingInfo
     }
 
