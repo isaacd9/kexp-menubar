@@ -213,13 +213,17 @@ class AudioPlayer {
     }
 
     private func notifyPlaybackStateChanged() {
-        NotificationCenter.default.post(
-            name: .kexpPlaybackStateDidChange,
-            object: nil,
-            userInfo: [
-                "isPlaying": isPlaying,
-                "isBuffering": isBuffering,
-            ]
-        )
+        let playing = isPlaying
+        let buffering = isBuffering
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(
+                name: .kexpPlaybackStateDidChange,
+                object: nil,
+                userInfo: [
+                    "isPlaying": playing,
+                    "isBuffering": buffering,
+                ]
+            )
+        }
     }
 }
