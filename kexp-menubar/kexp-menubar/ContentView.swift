@@ -56,8 +56,12 @@ struct CommentTextView: NSViewRepresentable {
         textView.isEditable = false
         textView.isSelectable = true
         textView.drawsBackground = false
+        textView.isVerticallyResizable = false
+        textView.isHorizontallyResizable = false
         textView.textContainerInset = .zero
         textView.textContainer?.lineFragmentPadding = 0
+        textView.textContainer?.widthTracksTextView = true
+        textView.textContainer?.heightTracksTextView = false
         textView.linkTextAttributes = [
             .foregroundColor: NSColor(red: 0xfb/255.0, green: 0xad/255.0, blue: 0x18/255.0, alpha: 1.0),
             .underlineStyle: NSUnderlineStyle.single.rawValue,
@@ -71,12 +75,13 @@ struct CommentTextView: NSViewRepresentable {
     }
 
     func sizeThatFits(_ proposal: ProposedViewSize, nsView: TappableTextView, context: Context) -> CGSize? {
-        guard let width = proposal.width, width > 0 else { return nil }
-        let bounds = makeAttributedString().boundingRect(
-            with: CGSize(width: width, height: .greatestFiniteMagnitude),
-            options: [.usesLineFragmentOrigin, .usesFontLeading]
-        )
-        return CGSize(width: width, height: ceil(bounds.height))
+        guard let width = proposal.width, width > 0,
+              let textContainer = nsView.textContainer,
+              let layoutManager = nsView.layoutManager else { return nil }
+        textContainer.containerSize = CGSize(width: width, height: .greatestFiniteMagnitude)
+        layoutManager.ensureLayout(for: textContainer)
+        let usedRect = layoutManager.usedRect(for: textContainer)
+        return CGSize(width: width, height: ceil(usedRect.height))
     }
 
     private static let urlRegex = try? NSRegularExpression(pattern: #"https?://[^\s\)\]>]+"#)
@@ -135,23 +140,24 @@ struct CommentView: View {
 
     var body: some View {
         let isCollapsible = shouldCollapseComment(comment)
+        let isCollapsed = !expanded && isCollapsible
         VStack(spacing: 0) {
-            let textView = CommentTextView(comment: comment, onTap: isCollapsible ? { expanded.toggle() } : nil)
-                .frame(maxWidth: .infinity, maxHeight: !expanded && isCollapsible ? collapsedHeight : nil, alignment: .topLeading)
+            CommentTextView(comment: comment, onTap: isCollapsible ? { expanded.toggle() } : nil)
+                .frame(maxWidth: .infinity, maxHeight: isCollapsed ? collapsedHeight : nil, alignment: .topLeading)
                 .padding(.horizontal, 10)
                 .padding(.top, 10)
                 .padding(.bottom, 4)
-            if !expanded && isCollapsible {
-                textView.mask {
-                    VStack(spacing: 0) {
+                .mask {
+                    if isCollapsed {
+                        VStack(spacing: 0) {
+                            Color.white
+                            LinearGradient(colors: [.white, .clear], startPoint: .top, endPoint: .bottom)
+                                .frame(height: 30)
+                        }
+                    } else {
                         Color.white
-                        LinearGradient(colors: [.white, .clear], startPoint: .top, endPoint: .bottom)
-                            .frame(height: 30)
                     }
                 }
-            } else {
-                textView
-            }
 
             Image(systemName: expanded ? "chevron.up" : "chevron.down")
                 .font(.caption2)
