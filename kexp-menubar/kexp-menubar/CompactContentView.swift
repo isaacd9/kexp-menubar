@@ -152,6 +152,9 @@ struct CompactContentView: View {
             audioPlayer.togglePlayback()
             return .handled
         }
+        .onExitCommand {
+            NSApp.keyWindow?.close()
+        }
         .onAppear {
             model.setLocation(playLocation)
             audioPlayer.setAutoReconnectInterval(TimeInterval(autoReconnectSeconds))
