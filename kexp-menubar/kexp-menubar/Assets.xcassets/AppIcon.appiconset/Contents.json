@@ -1,61 +1,61 @@
 {
   "images" : [
     {
-      "filename" : "airBreakArt 4.jpg",
+      "filename" : "icon_16.png",
       "idiom" : "mac",
       "scale" : "1x",
       "size" : "16x16"
     },
     {
-      "filename" : "airBreakArt 5.jpg",
+      "filename" : "icon_32.png",
       "idiom" : "mac",
       "scale" : "2x",
       "size" : "16x16"
     },
     {
-      "filename" : "airBreakArt 6.jpg",
+      "filename" : "icon_32.png",
       "idiom" : "mac",
       "scale" : "1x",
       "size" : "32x32"
     },
     {
-      "filename" : "airBreakArt 7.jpg",
+      "filename" : "icon_64.png",
       "idiom" : "mac",
       "scale" : "2x",
       "size" : "32x32"
     },
     {
-      "filename" : "airBreakArt 8.jpg",
+      "filename" : "icon_128.png",
       "idiom" : "mac",
       "scale" : "1x",
       "size" : "128x128"
     },
     {
-      "filename" : "airBreakArt 9.jpg",
+      "filename" : "icon_256.png",
       "idiom" : "mac",
       "scale" : "2x",
       "size" : "128x128"
     },
     {
-      "filename" : "airBreakArt 1.jpg",
+      "filename" : "icon_256.png",
       "idiom" : "mac",
       "scale" : "1x",
       "size" : "256x256"
     },
     {
-      "filename" : "airBreakArt.jpg",
+      "filename" : "icon_512.png",
       "idiom" : "mac",
       "scale" : "2x",
       "size" : "256x256"
     },
     {
-      "filename" : "airBreakArt 2.jpg",
+      "filename" : "icon_512.png",
       "idiom" : "mac",
       "scale" : "1x",
       "size" : "512x512"
     },
     {
-      "filename" : "airBreakArt 3.jpg",
+      "filename" : "icon_1024.png",
       "idiom" : "mac",
       "scale" : "2x",
       "size" : "512x512"
