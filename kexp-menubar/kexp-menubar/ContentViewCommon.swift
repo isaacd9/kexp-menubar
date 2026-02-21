@@ -6,6 +6,24 @@
 import AppKit
 import SwiftUI
 
+// MARK: - DJ Contact Actions
+
+class DJContactActions: NSObject {
+    static let shared = DJContactActions()
+
+    @objc func textDJ() {
+        if let url = URL(string: "sms:+12069035397") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+
+    @objc func emailDJ() {
+        if let url = URL(string: "mailto:dj@kexp.org") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+}
+
 // MARK: - HeaderView
 
 struct HeaderView: View {
@@ -66,6 +84,16 @@ struct HeaderView: View {
                         }
                         .frame(width: 28, height: 28)
                         .clipShape(Circle())
+                        .onTapGesture {
+                            let menu = NSMenu()
+                            let textItem = NSMenuItem(title: "Text DJ", action: #selector(DJContactActions.textDJ), keyEquivalent: "")
+                            textItem.target = DJContactActions.shared
+                            menu.addItem(textItem)
+                            let emailItem = NSMenuItem(title: "Email DJ", action: #selector(DJContactActions.emailDJ), keyEquivalent: "")
+                            emailItem.target = DJContactActions.shared
+                            menu.addItem(emailItem)
+                            menu.popUp(positioning: nil, at: NSEvent.mouseLocation, in: nil)
+                        }
                     }
                 }
 
