@@ -13,6 +13,14 @@ somewhat less obtrusive. It also implements some features not implemented in the
 iOS app (which this derives a bunch of icons from) but uses SwiftUI for higher
 performance and better user experience.
 
+## Installation
+
+Download the app and move it to `/Applications`. Because the app is not notarized, macOS will quarantine it. To remove the quarantine flag, run:
+
+```
+xattr -dr com.apple.quarantine /Applications/kexp-menubar.app
+```
+
 ## Features
 - Full display of show, song, and artist information as well as an expandable DJ comment.
 - Soft pauses for the stream, to prevent the welcome message from interrupting
