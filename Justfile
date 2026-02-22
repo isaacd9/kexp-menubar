@@ -31,7 +31,17 @@ build-release:
 run: build
     open {{build_dir}}/output/debug/{{app_name}}.app
 
-release version: build-release
+release version:
+    {{xcodebuild}} \
+        -project {{project}} \
+        -scheme {{scheme}} \
+        -configuration Release \
+        -derivedDataPath {{build_dir}}/derived \
+        CONFIGURATION_BUILD_DIR={{justfile_directory()}}/{{build_dir}}/output/release \
+        MACOSX_DEPLOYMENT_TARGET={{min_os}} \
+        MARKETING_VERSION={{version}} \
+        CODE_SIGN_IDENTITY="" \
+        CODE_SIGNING_REQUIRED=NO
     cd {{build_dir}}/output/release && zip -r {{justfile_directory()}}/{{build_dir}}/{{app_name}}-{{version}}.zip {{app_name}}.app
     gh release create v{{version}} \
         {{build_dir}}/{{app_name}}-{{version}}.zip \
