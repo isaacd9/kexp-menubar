@@ -21,6 +21,10 @@ Download the app and move it to `/Applications`. Because the app is not notarize
 xattr -dr com.apple.quarantine /Applications/kexp-menubar.app
 ```
 
+## Disclaimer
+
+All images and branding are borrowed from the [official KEXP mobile app](https://www.kexp.org/mobile/). This is an unofficial project with no affiliation with KEXP.
+
 ## Features
 - Full display of show, song, and artist information as well as an expandable DJ comment.
 - Soft pauses for the stream, to prevent the welcome message from interrupting
