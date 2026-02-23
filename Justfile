@@ -42,7 +42,8 @@ release version:
         MARKETING_VERSION={{version}} \
         CODE_SIGN_IDENTITY="" \
         CODE_SIGNING_REQUIRED=NO
-    cd {{build_dir}}/output/release && zip -r {{justfile_directory()}}/{{build_dir}}/{{app_name}}-{{version}}.zip {{app_name}}.app
+    codesign --sign - --force --deep {{build_dir}}/output/release/{{app_name}}.app
+    ditto -c -k --keepParent {{build_dir}}/output/release/{{app_name}}.app {{build_dir}}/{{app_name}}-{{version}}.zip
     gh release create v{{version}} \
         {{build_dir}}/{{app_name}}-{{version}}.zip \
         --repo {{repo}} \
