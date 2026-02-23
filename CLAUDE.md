@@ -4,13 +4,18 @@ Unofficial macOS menu bar app for streaming KEXP radio. Displays now playing inf
 
 ## Build & Run
 
-Open `kexp-menubar/kexp-menubar.xcodeproj` in Xcode and build the `kexp-menubar` scheme. No external dependencies — everything uses Apple frameworks.
+Use the Justfile — no need to open Xcode.
 
 ```
-xcodebuild -project kexp-menubar/kexp-menubar.xcodeproj -scheme kexp-menubar build
+just build          # debug build → build/output/debug/
+just run            # debug build + launch
+just build-release  # release build → build/output/release/
+just release 1.0.0  # release build, zip, create GitHub release — suggest only, never run
+just clean          # remove build/
+just lsp-config     # regenerate buildServer.json for Zed/SourceKit-LSP (run after just build)
 ```
 
-There are no tests.
+No external dependencies — everything uses Apple frameworks. There are no tests.
 
 ## Architecture
 
