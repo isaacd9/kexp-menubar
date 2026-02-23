@@ -15,8 +15,13 @@ targets macOS specifically for a better native feel.
 ## Installation
 
 Download the latest release from the [releases page](https://github.com/isaacd9/kexp-menubar/releases)
-and move it to `/Applications`. Because the app is not notarized, macOS will
-quarantine it. To remove the quarantine flag, run:
+and move it to `/Applications`. Because the app is not notarized, macOS may
+show a warning on first launch. You can either:
+
+1. Do a one-time bypass: right-click the app and choose `Open`, then click
+   `Open` again. Or go to `System Settings -> Privacy & Security` and click
+   `Open Anyway`.
+2. Remove the quarantine flag manually (run this in a system shell like Terminal):
 
 ```
 xattr -dr com.apple.quarantine /Applications/kexp-menubar.app
