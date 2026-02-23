@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		6A3BA0FF2F43835500CC106B /* kexp-menubar.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "kexp-menubar.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		6A3BA0FF2F43835500CC106B /* KEXP Menubar.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "KEXP Menubar.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -40,7 +40,7 @@
 		6A3BA1002F43835500CC106B /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				6A3BA0FF2F43835500CC106B /* kexp-menubar.app */,
+				6A3BA0FF2F43835500CC106B /* KEXP Menubar.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -66,8 +66,8 @@
 			name = "kexp-menubar";
 			packageProductDependencies = (
 			);
-			productName = "kexp-menubar";
-			productReference = 6A3BA0FF2F43835500CC106B /* kexp-menubar.app */;
+			productName = "KEXP Menubar";
+			productReference = 6A3BA0FF2F43835500CC106B /* KEXP Menubar.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -279,7 +279,7 @@
 				);
 				MARKETING_VERSION = 0.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = "isaac.kexp-menubar";
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = "KEXP Menubar";
 				REGISTER_APP_GROUPS = YES;
 				RUNTIME_EXCEPTION_ALLOW_DYLD_ENVIRONMENT_VARIABLES = NO;
 				RUNTIME_EXCEPTION_ALLOW_JIT = NO;
@@ -332,7 +332,7 @@
 				);
 				MARKETING_VERSION = 0.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = "isaac.kexp-menubar";
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = "KEXP Menubar";
 				REGISTER_APP_GROUPS = YES;
 				RUNTIME_EXCEPTION_ALLOW_DYLD_ENVIRONMENT_VARIABLES = NO;
 				RUNTIME_EXCEPTION_ALLOW_JIT = NO;
