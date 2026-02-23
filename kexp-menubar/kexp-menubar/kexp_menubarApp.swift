@@ -55,5 +55,13 @@ struct kexp_menubarApp: App {
             }
         }
         .menuBarExtraStyle(.window)
+        .onChange(of: model.song) {
+            audioPlayer.updateNowPlayingInfo(
+                song: model.song,
+                artist: model.artist,
+                album: model.album,
+                artworkURL: model.thumbnailURL
+            )
+        }
     }
 }
