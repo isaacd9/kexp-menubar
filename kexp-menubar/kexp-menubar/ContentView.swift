@@ -135,11 +135,12 @@ struct CommentTextView: NSViewRepresentable {
 
 struct CommentView: View {
     let comment: String
+    var allowCollapse: Bool = true
     @State private var expanded = false
     private let collapsedHeight: CGFloat = 80
 
     var body: some View {
-        let isCollapsible = shouldCollapseComment(comment)
+        let isCollapsible = allowCollapse && shouldCollapseComment(comment)
         let isCollapsed = !expanded && isCollapsible
         VStack(spacing: 0) {
             CommentTextView(comment: comment, onTap: isCollapsible ? { expanded.toggle() } : nil)
@@ -183,6 +184,7 @@ struct ContentView: View {
     var model: NowPlayingModel
     @Bindable var audioPlayer: AudioPlayer
     @State private var isShowingPlaylist = false
+    @State private var expandedPlaylistIndex: Int?
 
     var body: some View {
         VStack(spacing: 12) {
@@ -204,15 +206,29 @@ struct ContentView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                     } else {
                         ForEach(Array(model.recentSongs.enumerated()), id: \.offset) { entry in
+                            let index = entry.offset
                             let song = entry.element
-                            CompactSongRowView(
-                                isAirbreak: song.isAirbreak,
-                                thumbnailURL: song.thumbnailURL,
-                                song: song.song,
-                                artist: song.artist,
-                                album: song.album,
-                                releaseYear: song.releaseYear
-                            )
+                            VStack(spacing: 6) {
+                                Button {
+                                    guard !song.comment.isEmpty else { return }
+                                    expandedPlaylistIndex = expandedPlaylistIndex == index ? nil : index
+                                } label: {
+                                    CompactSongRowView(
+                                        isAirbreak: song.isAirbreak,
+                                        thumbnailURL: song.thumbnailURL,
+                                        song: song.song,
+                                        artist: song.artist,
+                                        album: song.album,
+                                        releaseYear: song.releaseYear
+                                    )
+                                    .contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain)
+
+                                if expandedPlaylistIndex == index && !song.comment.isEmpty {
+                                    CommentView(comment: song.comment, allowCollapse: false)
+                                }
+                            }
                         }
                     }
                 }
