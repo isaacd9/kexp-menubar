@@ -31,6 +31,8 @@ struct HeaderView: View {
     let hostNames: String
     let hostImageURL: URL?
     var audioPlayer: AudioPlayer
+    let isShowingPlaylist: Bool
+    let onPlaylistToggle: () -> Void
 
     @AppStorage("playLocation") private var playLocation = AppDefaults.playLocation
     @AppStorage("autoReconnectSeconds") private var autoReconnectSeconds = AppDefaults.autoReconnectSeconds
@@ -99,13 +101,76 @@ struct HeaderView: View {
 
                 Spacer()
 
-                SettingsMenu(
-                    audioPlayer: audioPlayer,
-                    playLocation: $playLocation,
-                    autoReconnectSeconds: $autoReconnectSeconds,
-                    isCompact: $isCompact
-                )
+                HStack(spacing: 8) {
+                    PlaylistToggleButton(
+                        isShowingPlaylist: isShowingPlaylist,
+                        onToggle: onPlaylistToggle
+                    )
+
+                    SettingsMenu(
+                        audioPlayer: audioPlayer,
+                        playLocation: $playLocation,
+                        autoReconnectSeconds: $autoReconnectSeconds,
+                        isCompact: $isCompact
+                    )
+                }
             }
+        }
+    }
+}
+
+struct PlaylistToggleButton: View {
+    let isShowingPlaylist: Bool
+    let onToggle: () -> Void
+
+    var body: some View {
+        Button(action: onToggle) {
+            Image(systemName: isShowingPlaylist ? "play.fill" : "line.3.horizontal")
+                .font(.system(size: 18, weight: .regular))
+                .foregroundStyle(.secondary)
+                .frame(width: 22, height: 22)
+                .padding(4)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help(isShowingPlaylist ? "Back to Now Playing" : "Show Playlist")
+    }
+}
+
+struct CompactSongRowView: View {
+    let isAirbreak: Bool
+    let thumbnailURL: URL?
+    let song: String
+    let artist: String
+    let album: String
+    let releaseYear: String
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 12) {
+            AlbumArtView(
+                isAirbreak: isAirbreak,
+                thumbnailURL: thumbnailURL,
+                size: 72,
+                cornerRadius: 6,
+                iconSize: 16
+            )
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(song.isEmpty ? "—" : song)
+                    .font(.title3.bold())
+                    .lineLimit(1)
+
+                Text(artist.isEmpty ? "—" : artist)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+
+                Text(album.isEmpty ? "—" : releaseYear.isEmpty ? album : "\(album) — \(releaseYear)")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+                    .lineLimit(1)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 }

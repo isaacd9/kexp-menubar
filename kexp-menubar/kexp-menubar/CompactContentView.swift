@@ -10,6 +10,7 @@ import SwiftUI
 struct CompactContentView: View {
     var model: NowPlayingModel
     @Bindable var audioPlayer: AudioPlayer
+    @State private var isShowingPlaylist = false
 
     var body: some View {
         VStack(spacing: 12) {
@@ -17,35 +18,41 @@ struct CompactContentView: View {
                 programName: model.programName,
                 hostNames: model.hostNames,
                 hostImageURL: model.hostImageURL,
-                audioPlayer: audioPlayer
+                audioPlayer: audioPlayer,
+                isShowingPlaylist: isShowingPlaylist,
+                onPlaylistToggle: { isShowingPlaylist.toggle() }
             )
 
-            // Small art + song info side by side
-            HStack(alignment: .center, spacing: 12) {
-                AlbumArtView(
+            if isShowingPlaylist {
+                VStack(spacing: 10) {
+                    if model.recentSongs.isEmpty {
+                        Text("No recent songs")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    } else {
+                        ForEach(Array(model.recentSongs.enumerated()), id: \.offset) { entry in
+                            let song = entry.element
+                            CompactSongRowView(
+                                isAirbreak: song.isAirbreak,
+                                thumbnailURL: song.thumbnailURL,
+                                song: song.song,
+                                artist: song.artist,
+                                album: song.album,
+                                releaseYear: song.releaseYear
+                            )
+                        }
+                    }
+                }
+            } else {
+                CompactSongRowView(
                     isAirbreak: model.isAirbreak,
                     thumbnailURL: model.thumbnailURL,
-                    size: 72,
-                    cornerRadius: 6,
-                    iconSize: 16
+                    song: model.song,
+                    artist: model.artist,
+                    album: model.album,
+                    releaseYear: model.releaseYear
                 )
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(model.song.isEmpty ? "—" : model.song)
-                        .font(.title3.bold())
-                        .lineLimit(1)
-
-                    Text(model.artist.isEmpty ? "—" : model.artist)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-
-                    Text(model.album.isEmpty ? "—" : model.releaseYear.isEmpty ? model.album : "\(model.album) — \(model.releaseYear)")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
-                        .lineLimit(1)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
             }
 
             ControlsView(
