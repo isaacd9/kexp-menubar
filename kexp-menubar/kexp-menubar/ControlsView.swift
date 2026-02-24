@@ -7,11 +7,56 @@
 
 import SwiftUI
 
+struct SongLinkButtonsView: View {
+    let song: String
+    let artist: String
+    let isAirbreak: Bool
+
+    var body: some View {
+        if !isAirbreak {
+            HStack(spacing: 8) {
+                Button(action: openAppleMusic) {
+                    Image("AppleMusicIcon")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 20, height: 20)
+                }
+                .buttonStyle(.plain)
+
+                Button(action: openSpotify) {
+                    Image("SpotifyIcon")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 20, height: 20)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    private func openAppleMusic() {
+        let query = "\(song) \(artist)"
+            .addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        if let url = URL(string: "music://music.apple.com/search?term=\(query)") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+
+    private func openSpotify() {
+        let query = "\(song), \(artist)"
+            .addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        if let url = URL(string: "spotify:search:\(query)") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+}
+
 struct ControlsView: View {
     @Bindable var audioPlayer: AudioPlayer
     let song: String
     let artist: String
     let isAirbreak: Bool
+    var showSongLinks: Bool = true
 
     var body: some View {
         ZStack {
@@ -41,34 +86,8 @@ struct ControlsView: View {
             .disabled(audioPlayer.isBuffering)
 
             HStack {
-                if !isAirbreak {
-                    Button(action: {
-                        let query = "\(song) \(artist)"
-                            .addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-                        if let url = URL(string: "music://music.apple.com/search?term=\(query)") {
-                            NSWorkspace.shared.open(url)
-                        }
-                    }) {
-                        Image("AppleMusicIcon")
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 20, height: 20)
-                    }
-                    .buttonStyle(.plain)
-
-                    Button(action: {
-                        let query = "\(song), \(artist)"
-                            .addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-                        if let url = URL(string: "spotify:search:\(query)") {
-                            NSWorkspace.shared.open(url)
-                        }
-                    }) {
-                        Image("SpotifyIcon")
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 20, height: 20)
-                    }
-                    .buttonStyle(.plain)
+                if showSongLinks {
+                    SongLinkButtonsView(song: song, artist: artist, isAirbreak: isAirbreak)
                 }
 
                 Spacer()

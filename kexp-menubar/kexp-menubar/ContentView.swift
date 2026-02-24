@@ -226,7 +226,11 @@ struct ContentView: View {
                                 .buttonStyle(.plain)
 
                                 if expandedPlaylistIndex == index && !song.comment.isEmpty {
-                                    CommentView(comment: song.comment, allowCollapse: false)
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        CommentView(comment: song.comment, allowCollapse: false)
+                                        SongLinkButtonsView(song: song.song, artist: song.artist, isAirbreak: song.isAirbreak)
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                    }
                                 }
                             }
                         }
@@ -260,7 +264,8 @@ struct ContentView: View {
                 audioPlayer: audioPlayer,
                 song: model.song,
                 artist: model.artist,
-                isAirbreak: model.isAirbreak
+                isAirbreak: model.isAirbreak,
+                showSongLinks: !isShowingPlaylist
             )
         }
         .kexpWindow(model: model, audioPlayer: audioPlayer)
