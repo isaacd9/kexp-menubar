@@ -48,6 +48,7 @@ struct RecentSong: Sendable {
     let artist: String
     let album: String
     let releaseYear: String
+    let comment: String
     let thumbnailURL: URL?
 }
 
@@ -125,6 +126,7 @@ class NowPlayingModel {
                             artist: isAirbreak ? "" : (play.artist ?? ""),
                             album: isAirbreak ? "" : (play.album ?? ""),
                             releaseYear: isAirbreak ? "" : self.releaseYear(from: play.releaseDate),
+                            comment: play.comment ?? "",
                             thumbnailURL: isAirbreak ? nil : play.thumbnailUri.flatMap(URL.init(string:))
                         )
                     }
