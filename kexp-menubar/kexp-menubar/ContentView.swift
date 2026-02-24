@@ -182,6 +182,7 @@ struct CommentView: View {
 struct ContentView: View {
     var model: NowPlayingModel
     @Bindable var audioPlayer: AudioPlayer
+    @State private var isShowingPlaylist = false
 
     var body: some View {
         VStack(spacing: 12) {
@@ -189,30 +190,54 @@ struct ContentView: View {
                 programName: model.programName,
                 hostNames: model.hostNames,
                 hostImageURL: model.hostImageURL,
-                audioPlayer: audioPlayer
+                audioPlayer: audioPlayer,
+                isShowingPlaylist: isShowingPlaylist,
+                onPlaylistToggle: { isShowingPlaylist.toggle() }
             )
 
-            AlbumArtView(
-                isAirbreak: model.isAirbreak,
-                thumbnailURL: model.thumbnailURL
-            )
+            if isShowingPlaylist {
+                VStack(spacing: 10) {
+                    if model.recentSongs.isEmpty {
+                        Text("No recent songs")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    } else {
+                        ForEach(Array(model.recentSongs.enumerated()), id: \.offset) { entry in
+                            let song = entry.element
+                            CompactSongRowView(
+                                isAirbreak: song.isAirbreak,
+                                thumbnailURL: song.thumbnailURL,
+                                song: song.song,
+                                artist: song.artist,
+                                album: song.album,
+                                releaseYear: song.releaseYear
+                            )
+                        }
+                    }
+                }
+            } else {
+                AlbumArtView(
+                    isAirbreak: model.isAirbreak,
+                    thumbnailURL: model.thumbnailURL
+                )
 
-            // Song info
-            VStack(spacing: 4) {
-                Text(model.song.isEmpty ? "—" : model.song)
-                    .font(.title2.bold())
+                VStack(spacing: 4) {
+                    Text(model.song.isEmpty ? "—" : model.song)
+                        .font(.title2.bold())
 
-                Text(model.artist.isEmpty ? "—" : model.artist)
-                    .font(.title3)
-                    .foregroundStyle(.secondary)
+                    Text(model.artist.isEmpty ? "—" : model.artist)
+                        .font(.title3)
+                        .foregroundStyle(.secondary)
 
-                Text(model.album.isEmpty ? "—" : model.releaseYear.isEmpty ? model.album : "\(model.album) — \(model.releaseYear)")
-                    .font(.callout)
-                    .foregroundStyle(.tertiary)
-            }
+                    Text(model.album.isEmpty ? "—" : model.releaseYear.isEmpty ? model.album : "\(model.album) — \(model.releaseYear)")
+                        .font(.callout)
+                        .foregroundStyle(.tertiary)
+                }
 
-            if !model.comment.isEmpty {
-                CommentView(comment: model.comment)
+                if !model.comment.isEmpty {
+                    CommentView(comment: model.comment)
+                }
             }
 
             ControlsView(
