@@ -42,6 +42,16 @@ struct Show: Codable, Sendable {
     }
 }
 
+struct RecentSong: Sendable {
+    let isAirbreak: Bool
+    let song: String
+    let artist: String
+    let album: String
+    let releaseYear: String
+    let comment: String
+    let thumbnailURL: URL?
+}
+
 @Observable
 class NowPlayingModel {
     var song: String = ""
@@ -55,6 +65,7 @@ class NowPlayingModel {
     var hostNames: String = ""
     var hostImageURL: URL?
     var showURL: URL?
+    var recentSongs: [RecentSong] = []
     private var location: Int = 1
     private var timer: Timer?
     private var currentShowUri: String?
@@ -84,7 +95,7 @@ class NowPlayingModel {
         var components = URLComponents(string: "https://api.kexp.org/v2/plays/")
         components?.queryItems = [
             URLQueryItem(name: "format", value: "json"),
-            URLQueryItem(name: "limit", value: "1"),
+            URLQueryItem(name: "limit", value: "10"),
             URLQueryItem(name: "location", value: String(location)),
         ]
         guard let url = components?.url else { return }
@@ -105,11 +116,28 @@ class NowPlayingModel {
             }
 
             DispatchQueue.main.async {
+                self.recentSongs = result.results
+                    .compactMap { play in
+                        let isAirbreak = play.playType == "airbreak"
+                        let songTitle = isAirbreak ? "Airbreak" : (play.song ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+                        return RecentSong(
+                            isAirbreak: isAirbreak,
+                            song: songTitle,
+                            artist: isAirbreak ? "" : (play.artist ?? ""),
+                            album: isAirbreak ? "" : (play.album ?? ""),
+                            releaseYear: isAirbreak ? "" : self.releaseYear(from: play.releaseDate),
+                            comment: play.comment ?? "",
+                            thumbnailURL: isAirbreak ? nil : play.thumbnailUri.flatMap(URL.init(string:))
+                        )
+                    }
+                    .prefix(5)
+                    .map { $0 }
+
                 self.isAirbreak = play.playType == "airbreak"
                 self.song = self.isAirbreak ? "Airbreak" : (play.song ?? "")
                 self.artist = self.isAirbreak ? "" : (play.artist ?? "")
                 self.album = self.isAirbreak ? "" : (play.album ?? "")
-                self.releaseYear = self.isAirbreak ? "" : String(play.releaseDate?.prefix(4) ?? "")
+                self.releaseYear = self.isAirbreak ? "" : self.releaseYear(from: play.releaseDate)
                 self.comment = play.comment ?? ""
                 let oldThumb = self.thumbnailURL
                 if let thumb = play.thumbnailUri, let thumbURL = URL(string: thumb) {
@@ -134,6 +162,10 @@ class NowPlayingModel {
                 }
             }
         }.resume()
+    }
+
+    private func releaseYear(from releaseDate: String?) -> String {
+        String(releaseDate?.prefix(4) ?? "")
     }
 
     private func fetchShow(uri: String) {
