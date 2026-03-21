@@ -25,9 +25,15 @@ jobs:
       - name: Ad hoc sign release app
         run: codesign --sign - --force --deep "build/output/release/KEXP Menubar.app"
 
+      - name: Stage release app artifact
+        run: |
+          rm -rf artifact
+          mkdir -p artifact
+          cp -R "build/output/release/KEXP Menubar.app" "artifact/KEXP Menubar.app"
+
       - name: Upload release app artifact
         uses: actions/upload-artifact@v4
         with:
           name: kexp-menubar-release-app
-          path: build/output/release/KEXP Menubar.app
+          path: artifact/
           if-no-files-found: error

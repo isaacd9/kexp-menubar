@@ -77,7 +77,7 @@ jobs:
         run: |
           gh run download "${{ steps.find_run.outputs.run_id }}" \
             --repo "${{ github.repository }}" \
-            --pattern "kexp-menubar-release-app" \
+            --name "kexp-menubar-release-app" \
             --dir artifacts
 
       - name: Package release zip
@@ -85,10 +85,10 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p release
-          app_path="$(find artifacts -type d -name 'KEXP Menubar.app' -print -quit)"
+          app_path="artifacts/KEXP Menubar.app"
 
-          if [ -z "$app_path" ]; then
-            echo "Signed app artifact not found after download" >&2
+          if [ ! -d "$app_path" ]; then
+            echo "Signed app artifact not found at ${app_path}" >&2
             exit 1
           fi
 
