@@ -11,7 +11,7 @@ on:
         description: "Append commit SHA as SemVer build metadata and mark the release as a prerelease"
         required: false
         type: boolean
-        default: false
+        default: true
 
 permissions:
   actions: read
