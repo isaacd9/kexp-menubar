@@ -24,7 +24,7 @@ show a warning on first launch. You can either:
 2. Remove the quarantine flag manually (run this in a system shell like Terminal):
 
 ```
-xattr -dr com.apple.quarantine /Applications/kexp-menubar.app
+xattr -dr com.apple.quarantine "/Applications/KEXP Menubar.app"
 ```
 
 ## Features
