@@ -25,13 +25,14 @@ build-release:
         -derivedDataPath {{build_dir}}/derived \
         CONFIGURATION_BUILD_DIR={{justfile_directory()}}/{{build_dir}}/output/release \
         MACOSX_DEPLOYMENT_TARGET={{min_os}} \
+        MARKETING_VERSION="$(tr -d '\n' < "{{justfile_directory()}}/VERSION")" \
         CODE_SIGN_IDENTITY="" \
         CODE_SIGNING_REQUIRED=NO
 
 run: build
     open "{{build_dir}}/output/debug/{{app_name}}.app"
 
-release version:
+release:
     {{xcodebuild}} \
         -project {{project}} \
         -scheme {{scheme}} \
@@ -39,15 +40,15 @@ release version:
         -derivedDataPath {{build_dir}}/derived \
         CONFIGURATION_BUILD_DIR={{justfile_directory()}}/{{build_dir}}/output/release \
         MACOSX_DEPLOYMENT_TARGET={{min_os}} \
-        MARKETING_VERSION={{version}} \
+        MARKETING_VERSION="$(tr -d '\n' < "{{justfile_directory()}}/VERSION")" \
         CODE_SIGN_IDENTITY="" \
         CODE_SIGNING_REQUIRED=NO
     codesign --sign - --force --deep "{{build_dir}}/output/release/{{app_name}}.app"
-    ditto -c -k --keepParent "{{build_dir}}/output/release/{{app_name}}.app" "{{build_dir}}/{{app_name}}-{{version}}.zip"
-    gh release create v{{version}} \
-        "{{build_dir}}/{{app_name}}-{{version}}.zip" \
+    ditto -c -k --keepParent "{{build_dir}}/output/release/{{app_name}}.app" "{{build_dir}}/{{app_name}}-$(tr -d '\n' < "{{justfile_directory()}}/VERSION").zip"
+    gh release create "v$(tr -d '\n' < "{{justfile_directory()}}/VERSION")" \
+        "{{build_dir}}/{{app_name}}-$(tr -d '\n' < "{{justfile_directory()}}/VERSION").zip" \
         --repo {{repo}} \
-        --title "v{{version}}"
+        --title "v$(tr -d '\n' < "{{justfile_directory()}}/VERSION")"
 
 clean:
     rm -rf {{build_dir}}
