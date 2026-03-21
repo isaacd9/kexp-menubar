@@ -1,0 +1,112 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit_sha:
+        description: "Commit SHA to release (default: latest on default branch)"
+        required: false
+        type: string
+      include_build_metadata:
+        description: "Append commit SHA as SemVer build metadata and mark the release as a prerelease"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-latest
+
+    steps:
+      - name: Resolve commit SHA
+        id: resolve
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -n "${{ inputs.commit_sha }}" ]; then
+            sha="${{ inputs.commit_sha }}"
+          else
+            sha="$(gh api "repos/${{ github.repository }}/commits/${DEFAULT_BRANCH}" --jq '.sha')"
+          fi
+          echo "sha=${sha}" >> "$GITHUB_OUTPUT"
+          echo "Resolved SHA: ${sha}"
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.resolve.outputs.sha }}
+
+      - name: Determine version
+        id: version
+        run: |
+          base_version="$(tr -d '\n' < VERSION)"
+          if [ "${{ inputs.include_build_metadata }}" = "true" ]; then
+            version="${base_version}+${{ steps.resolve.outputs.sha }}"
+          else
+            version="${base_version}"
+          fi
+
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "Version: ${version}"
+
+      - name: Find build workflow run for commit
+        id: find_run
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          run_id="$(gh api \
+            "repos/${{ github.repository }}/actions/workflows/build-release.yml/runs?head_sha=${{ steps.resolve.outputs.sha }}&status=success&per_page=1" \
+            --jq '.workflow_runs[0].id')"
+
+          if [ -z "$run_id" ] || [ "$run_id" = "null" ]; then
+            echo "No successful build-release.yml run found for commit ${{ steps.resolve.outputs.sha }}" >&2
+            exit 1
+          fi
+
+          echo "run_id=${run_id}" >> "$GITHUB_OUTPUT"
+          echo "Build run: ${run_id}"
+
+      - name: Download signed app artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download "${{ steps.find_run.outputs.run_id }}" \
+            --repo "${{ github.repository }}" \
+            --pattern "kexp-menubar-release-app" \
+            --dir artifacts
+
+      - name: Package release zip
+        id: package
+        run: |
+          set -euo pipefail
+          mkdir -p release
+          app_path="$(find artifacts -type d -name 'KEXP Menubar.app' -print -quit)"
+
+          if [ -z "$app_path" ]; then
+            echo "Signed app artifact not found after download" >&2
+            exit 1
+          fi
+
+          asset_name="KEXP Menubar-${{ steps.version.outputs.version }}.zip"
+          ditto -c -k --keepParent "$app_path" "release/${asset_name}"
+
+          echo "asset_name=${asset_name}" >> "$GITHUB_OUTPUT"
+          echo "asset_path=release/${asset_name}" >> "$GITHUB_OUTPUT"
+          ls -la release
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "v${{ steps.version.outputs.version }}" \
+            --repo "${{ github.repository }}" \
+            --target "${{ steps.resolve.outputs.sha }}" \
+            --title "v${{ steps.version.outputs.version }}" \
+            --notes "" \
+            ${{ inputs.include_build_metadata && '--prerelease' || '' }} \
+            "${{ steps.package.outputs.asset_path }}"
