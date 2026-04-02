@@ -39,7 +39,8 @@ struct CompactContentView: View {
                             song: model.song,
                             artist: model.artist,
                             album: model.album,
-                            releaseYear: model.releaseYear
+                            releaseYear: model.releaseYear,
+                            playedAt: nil
                         )
                         .contentShape(Rectangle())
                     }

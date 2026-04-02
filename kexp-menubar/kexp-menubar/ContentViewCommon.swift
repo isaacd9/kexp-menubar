@@ -144,6 +144,7 @@ struct CompactSongRowView: View {
     let artist: String
     let album: String
     let releaseYear: String
+    let playedAt: Date?
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
@@ -156,9 +157,17 @@ struct CompactSongRowView: View {
             )
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(song.isEmpty ? "—" : song)
-                    .font(.title3.bold())
-                    .lineLimit(1)
+                HStack(alignment: .firstTextBaseline) {
+                    Text(song.isEmpty ? "—" : song)
+                        .font(.title3.bold())
+                        .lineLimit(1)
+                    Spacer()
+                    if let playedAt {
+                        Text(playedAt, style: .time)
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                    }
+                }
 
                 Text(artist.isEmpty ? "—" : artist)
                     .font(.subheadline)
@@ -231,7 +240,8 @@ struct PlaylistScrollView: View {
                                     song: song.song,
                                     artist: song.artist,
                                     album: song.album,
-                                    releaseYear: song.releaseYear
+                                    releaseYear: song.releaseYear,
+                                    playedAt: song.playedAt
                                 )
                                 .contentShape(Rectangle())
                             }

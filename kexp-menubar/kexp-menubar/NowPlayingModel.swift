@@ -22,9 +22,10 @@ struct Play: Codable, Sendable {
     let showUri: String?
     let releaseDate: String?
     let playType: String?
+    let airdate: String?
 
     enum CodingKeys: String, CodingKey {
-        case uri, song, artist, album, comment
+        case uri, song, artist, album, comment, airdate
         case thumbnailUri = "thumbnail_uri"
         case showUri = "show_uri"
         case releaseDate = "release_date"
@@ -53,6 +54,7 @@ struct RecentSong: Identifiable, Hashable, Sendable {
     let releaseYear: String
     let comment: String
     let thumbnailURL: URL?
+    let playedAt: Date?
 }
 
 @Observable
@@ -226,7 +228,8 @@ class NowPlayingModel {
                 album: isAirbreak ? "" : (play.album ?? ""),
                 releaseYear: isAirbreak ? "" : releaseYear(from: play.releaseDate),
                 comment: play.comment ?? "",
-                thumbnailURL: isAirbreak ? nil : play.thumbnailUri.flatMap(URL.init(string:))
+                thumbnailURL: isAirbreak ? nil : play.thumbnailUri.flatMap(URL.init(string:)),
+                playedAt: play.airdate.flatMap { ISO8601DateFormatter().date(from: $0) }
             )
         }
     }
