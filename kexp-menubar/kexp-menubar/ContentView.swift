@@ -271,6 +271,10 @@ struct ContentView: View {
                 showSongLinks: !isShowingPlaylist
             )
         }
+        .onChange(of: isShowingPlaylist) {
+            guard !isShowingPlaylist else { return }
+            expandedPlaylistSongID = nil
+        }
         .kexpWindow(model: model, audioPlayer: audioPlayer)
     }
 }
