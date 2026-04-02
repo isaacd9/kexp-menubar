@@ -197,6 +197,8 @@ class NowPlayingModel {
         }.resume()
     }
 
+    private static let airdateDateFormatter = ISO8601DateFormatter()
+
     private func releaseYear(from releaseDate: String?) -> String {
         String(releaseDate?.prefix(4) ?? "")
     }
@@ -229,7 +231,7 @@ class NowPlayingModel {
                 releaseYear: isAirbreak ? "" : releaseYear(from: play.releaseDate),
                 comment: play.comment ?? "",
                 thumbnailURL: isAirbreak ? nil : play.thumbnailUri.flatMap(URL.init(string:)),
-                playedAt: play.airdate.flatMap { ISO8601DateFormatter().date(from: $0) }
+                playedAt: play.airdate.flatMap { Self.airdateDateFormatter.date(from: $0) }
             )
         }
     }
