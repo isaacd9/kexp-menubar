@@ -76,8 +76,6 @@ class NowPlayingModel {
     private var location: Int = 1
     private var timer: Timer?
     private var currentShowUri: String?
-    private var latestRecentSongs: [RecentSong] = []
-    private var latestHasMoreRecentSongs = false
     private var nextRecentSongsOffset = 0
     private var isPlaylistActive = false
 
@@ -86,14 +84,15 @@ class NowPlayingModel {
         guard location != clamped else { return }
         location = clamped
         currentShowUri = nil
-        resetPlaylistPagination(useLatestRecentSongs: false)
+        recentSongs = []
+        resetPlaylistPagination()
         fetch()
     }
 
     func setPlaylistActive(_ isActive: Bool) {
         guard isPlaylistActive != isActive else { return }
         isPlaylistActive = isActive
-        resetPlaylistPagination(useLatestRecentSongs: true)
+        resetPlaylistPagination()
     }
 
     func loadMoreRecentSongsIfNeeded(currentSong: RecentSong) {
@@ -138,19 +137,17 @@ class NowPlayingModel {
 
             DispatchQueue.main.async {
                 let recentSongs = self.makeRecentSongs(from: result.results)
-                self.latestRecentSongs = recentSongs
-                self.latestHasMoreRecentSongs = result.next != nil
-
-                if self.isPlaylistActive {
-                    if self.recentSongs.isEmpty {
-                        self.resetPlaylistPagination(useLatestRecentSongs: true)
-                    }
-                } else {
+                let hasMore = result.next != nil
+                if !self.isPlaylistActive {
                     if self.recentSongs != recentSongs {
                         self.recentSongs = recentSongs
                     }
                     self.nextRecentSongsOffset = recentSongs.count
-                    self.hasMoreRecentSongs = self.latestHasMoreRecentSongs
+                    self.hasMoreRecentSongs = hasMore
+                } else if self.recentSongs.isEmpty {
+                    self.recentSongs = recentSongs
+                    self.nextRecentSongsOffset = recentSongs.count
+                    self.hasMoreRecentSongs = hasMore
                 }
 
                 let isAirbreak = play.playType == "airbreak"
@@ -238,15 +235,13 @@ class NowPlayingModel {
         recentSongs.last?.id
     }
 
-    private func resetPlaylistPagination(useLatestRecentSongs: Bool) {
+    private func resetPlaylistPagination() {
         isLoadingMoreRecentSongs = false
-        nextRecentSongsOffset = latestRecentSongs.count
-        hasMoreRecentSongs = latestHasMoreRecentSongs
-        if useLatestRecentSongs {
-            recentSongs = latestRecentSongs
-        } else {
-            recentSongs = []
+        if recentSongs.count > playlistInitialPageSize {
+            recentSongs = Array(recentSongs.prefix(playlistInitialPageSize))
         }
+        nextRecentSongsOffset = recentSongs.count
+        hasMoreRecentSongs = recentSongs.count >= playlistInitialPageSize
     }
 
     private func loadMoreRecentSongs() {

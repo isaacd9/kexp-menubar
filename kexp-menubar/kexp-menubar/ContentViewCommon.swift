@@ -175,6 +175,69 @@ struct CompactSongRowView: View {
     }
 }
 
+// MARK: - PlaylistScrollView
+
+struct PlaylistScrollView: View {
+    var model: NowPlayingModel
+    @Binding var expandedPlaylistSongID: RecentSong.ID?
+    var maxHeight: CGFloat = 420
+
+    var body: some View {
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 10) {
+                if model.recentSongs.isEmpty {
+                    Text("No recent songs")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                } else {
+                    ForEach(model.recentSongs) { song in
+                        VStack(spacing: 6) {
+                            Button {
+                                guard !song.comment.isEmpty else { return }
+                                expandedPlaylistSongID = expandedPlaylistSongID == song.id ? nil : song.id
+                            } label: {
+                                CompactSongRowView(
+                                    isAirbreak: song.isAirbreak,
+                                    thumbnailURL: song.thumbnailURL,
+                                    song: song.song,
+                                    artist: song.artist,
+                                    album: song.album,
+                                    releaseYear: song.releaseYear
+                                )
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+
+                            if expandedPlaylistSongID == song.id && !song.comment.isEmpty {
+                                VStack(alignment: .leading, spacing: 6) {
+                                    CommentView(comment: song.comment, allowCollapse: false)
+                                    SongLinkButtonsView(song: song.song, artist: song.artist, isAirbreak: song.isAirbreak)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                }
+                            }
+                        }
+                        .onAppear {
+                            model.loadMoreRecentSongsIfNeeded(currentSong: song)
+                        }
+                    }
+
+                    if model.isLoadingMoreRecentSongs {
+                        HStack {
+                            Spacer()
+                            ProgressView()
+                                .controlSize(.small)
+                            Spacer()
+                        }
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .frame(maxHeight: maxHeight, alignment: .top)
+    }
+}
+
 // MARK: - AlbumArtView
 
 struct AlbumArtView: View {

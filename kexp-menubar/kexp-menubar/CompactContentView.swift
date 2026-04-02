@@ -13,7 +13,6 @@ struct CompactContentView: View {
     @State private var isShowingPlaylist = false
     @State private var expandedPlaylistSongID: RecentSong.ID?
     @State private var isNowPlayingCommentExpanded = false
-    private let playlistScrollMaxHeight: CGFloat = 420
 
     var body: some View {
         VStack(spacing: 12) {
@@ -27,58 +26,7 @@ struct CompactContentView: View {
             )
 
             if isShowingPlaylist {
-                ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 10) {
-                        if model.recentSongs.isEmpty {
-                            Text("No recent songs")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                        } else {
-                            ForEach(model.recentSongs) { song in
-                                VStack(spacing: 6) {
-                                    Button {
-                                        guard !song.comment.isEmpty else { return }
-                                        expandedPlaylistSongID = expandedPlaylistSongID == song.id ? nil : song.id
-                                    } label: {
-                                        CompactSongRowView(
-                                            isAirbreak: song.isAirbreak,
-                                            thumbnailURL: song.thumbnailURL,
-                                            song: song.song,
-                                            artist: song.artist,
-                                            album: song.album,
-                                            releaseYear: song.releaseYear
-                                        )
-                                        .contentShape(Rectangle())
-                                    }
-                                    .buttonStyle(.plain)
-
-                                    if expandedPlaylistSongID == song.id && !song.comment.isEmpty {
-                                        VStack(alignment: .leading, spacing: 6) {
-                                            CommentView(comment: song.comment, allowCollapse: false)
-                                            SongLinkButtonsView(song: song.song, artist: song.artist, isAirbreak: song.isAirbreak)
-                                                .frame(maxWidth: .infinity, alignment: .leading)
-                                        }
-                                    }
-                                }
-                                .onAppear {
-                                    model.loadMoreRecentSongsIfNeeded(currentSong: song)
-                                }
-                            }
-
-                            if model.isLoadingMoreRecentSongs {
-                                HStack {
-                                    Spacer()
-                                    ProgressView()
-                                        .controlSize(.small)
-                                    Spacer()
-                                }
-                            }
-                        }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .frame(maxHeight: playlistScrollMaxHeight, alignment: .top)
+                PlaylistScrollView(model: model, expandedPlaylistSongID: $expandedPlaylistSongID)
             } else {
                 VStack(spacing: 6) {
                     Button {
@@ -114,19 +62,14 @@ struct CompactContentView: View {
         .onChange(of: model.comment) {
             isNowPlayingCommentExpanded = false
         }
-        .onChange(of: isShowingPlaylist) {
-            guard !isShowingPlaylist else { return }
-            expandedPlaylistSongID = nil
-        }
         .kexpWindow(model: model, audioPlayer: audioPlayer)
     }
 
     private func togglePlaylist() {
-        let nextValue = !isShowingPlaylist
-        model.setPlaylistActive(nextValue)
-        if !nextValue {
+        isShowingPlaylist.toggle()
+        model.setPlaylistActive(isShowingPlaylist)
+        if !isShowingPlaylist {
             expandedPlaylistSongID = nil
         }
-        isShowingPlaylist = nextValue
     }
 }
