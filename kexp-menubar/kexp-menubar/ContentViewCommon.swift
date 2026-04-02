@@ -231,7 +231,7 @@ struct PlaylistScrollView: View {
                     ForEach(model.recentSongs) { song in
                         VStack(spacing: 6) {
                             Button {
-                                guard !song.comment.isEmpty else { return }
+                                guard !song.isAirbreak else { return }
                                 expandedPlaylistSongID = expandedPlaylistSongID == song.id ? nil : song.id
                             } label: {
                                 CompactSongRowView(
@@ -247,9 +247,11 @@ struct PlaylistScrollView: View {
                             }
                             .buttonStyle(.plain)
 
-                            if expandedPlaylistSongID == song.id && !song.comment.isEmpty {
+                            if expandedPlaylistSongID == song.id && !song.isAirbreak {
                                 VStack(alignment: .leading, spacing: 6) {
-                                    CommentView(comment: song.comment, allowCollapse: false)
+                                    if !song.comment.isEmpty {
+                                        CommentView(comment: song.comment, allowCollapse: false)
+                                    }
                                     SongLinkButtonsView(song: song.song, artist: song.artist, isAirbreak: song.isAirbreak)
                                         .frame(maxWidth: .infinity, alignment: .leading)
                                 }
