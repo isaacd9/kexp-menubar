@@ -200,7 +200,7 @@ struct ContentView: View {
 
             if isShowingPlaylist {
                 ScrollView {
-                    LazyVStack(spacing: 10) {
+                    VStack(alignment: .leading, spacing: 10) {
                         if model.recentSongs.isEmpty {
                             Text("No recent songs")
                                 .font(.subheadline)

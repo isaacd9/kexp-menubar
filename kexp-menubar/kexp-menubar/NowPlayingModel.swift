@@ -119,27 +119,44 @@ class NowPlayingModel {
             }
 
             DispatchQueue.main.async {
-                self.recentSongs = self.makeRecentSongs(from: result.results)
+                let recentSongs = self.makeRecentSongs(from: result.results)
+                if self.recentSongs != recentSongs {
+                    self.recentSongs = recentSongs
+                }
 
-                self.isAirbreak = play.playType == "airbreak"
-                self.song = self.isAirbreak ? "Airbreak" : (play.song ?? "")
-                self.artist = self.isAirbreak ? "" : (play.artist ?? "")
-                self.album = self.isAirbreak ? "" : (play.album ?? "")
-                self.releaseYear = self.isAirbreak ? "" : self.releaseYear(from: play.releaseDate)
-                self.comment = play.comment ?? ""
-                let oldThumb = self.thumbnailURL
-                if let thumb = play.thumbnailUri, let thumbURL = URL(string: thumb) {
-                    self.thumbnailURL = thumbURL
-                } else {
-                    self.thumbnailURL = nil
+                let isAirbreak = play.playType == "airbreak"
+                let song = isAirbreak ? "Airbreak" : (play.song ?? "")
+                let artist = isAirbreak ? "" : (play.artist ?? "")
+                let album = isAirbreak ? "" : (play.album ?? "")
+                let releaseYear = isAirbreak ? "" : self.releaseYear(from: play.releaseDate)
+                let comment = play.comment ?? ""
+                let thumbnailURL = play.thumbnailUri.flatMap(URL.init(string:))
+                let showURL = play.showUri.flatMap(URL.init(string:))
+
+                if self.isAirbreak != isAirbreak {
+                    self.isAirbreak = isAirbreak
                 }
-                if self.thumbnailURL != oldThumb {
-                    print("[NowPlaying] thumbnailURL changed: \(oldThumb?.absoluteString ?? "nil") -> \(self.thumbnailURL?.absoluteString ?? "nil")")
+                if self.song != song {
+                    self.song = song
                 }
-                if let showUri = play.showUri, let showURL = URL(string: showUri) {
+                if self.artist != artist {
+                    self.artist = artist
+                }
+                if self.album != album {
+                    self.album = album
+                }
+                if self.releaseYear != releaseYear {
+                    self.releaseYear = releaseYear
+                }
+                if self.comment != comment {
+                    self.comment = comment
+                }
+                if self.thumbnailURL != thumbnailURL {
+                    print("[NowPlaying] thumbnailURL changed: \(self.thumbnailURL?.absoluteString ?? "nil") -> \(thumbnailURL?.absoluteString ?? "nil")")
+                    self.thumbnailURL = thumbnailURL
+                }
+                if self.showURL != showURL {
                     self.showURL = showURL
-                } else {
-                    self.showURL = nil
                 }
 
                 // Fetch show info only when the show changes.
@@ -204,12 +221,18 @@ class NowPlayingModel {
                     print("[NowPlaying] Ignoring stale show response for \(uri)")
                     return
                 }
-                self.programName = show.programName ?? ""
-                self.hostNames = show.hostNames?.joined(separator: " and ") ?? ""
-                if let imageUri = show.imageUri, let imageURL = URL(string: imageUri) {
-                    self.hostImageURL = imageURL
-                } else {
-                    self.hostImageURL = nil
+                let programName = show.programName ?? ""
+                let hostNames = show.hostNames?.joined(separator: " and ") ?? ""
+                let hostImageURL = show.imageUri.flatMap(URL.init(string:))
+
+                if self.programName != programName {
+                    self.programName = programName
+                }
+                if self.hostNames != hostNames {
+                    self.hostNames = hostNames
+                }
+                if self.hostImageURL != hostImageURL {
+                    self.hostImageURL = hostImageURL
                 }
             }
         }.resume()
