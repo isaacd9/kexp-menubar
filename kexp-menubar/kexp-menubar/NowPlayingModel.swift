@@ -8,6 +8,7 @@
 import Foundation
 
 struct PlayResult: Codable, Sendable {
+    let next: String?
     let results: [Play]
 }
 
@@ -56,7 +57,8 @@ struct RecentSong: Identifiable, Hashable, Sendable {
 
 @Observable
 class NowPlayingModel {
-    private let recentSongsLimit = 20
+    private let playlistInitialPageSize = 20
+    private let playlistPageSize = 10
     var song: String = ""
     var artist: String = ""
     var album: String = ""
@@ -69,16 +71,38 @@ class NowPlayingModel {
     var hostImageURL: URL?
     var showURL: URL?
     var recentSongs: [RecentSong] = []
+    var isLoadingMoreRecentSongs = false
+    var hasMoreRecentSongs = false
     private var location: Int = 1
     private var timer: Timer?
     private var currentShowUri: String?
+    private var latestRecentSongs: [RecentSong] = []
+    private var latestHasMoreRecentSongs = false
+    private var nextRecentSongsOffset = 0
+    private var isPlaylistActive = false
 
     func setLocation(_ newLocation: Int) {
         let clamped = max(1, min(3, newLocation))
         guard location != clamped else { return }
         location = clamped
         currentShowUri = nil
+        resetPlaylistPagination(useLatestRecentSongs: false)
         fetch()
+    }
+
+    func setPlaylistActive(_ isActive: Bool) {
+        guard isPlaylistActive != isActive else { return }
+        isPlaylistActive = isActive
+        resetPlaylistPagination(useLatestRecentSongs: true)
+    }
+
+    func loadMoreRecentSongsIfNeeded(currentSong: RecentSong) {
+        guard isPlaylistActive,
+              hasMoreRecentSongs,
+              !isLoadingMoreRecentSongs,
+              let triggerSongID = recentSongsLoadMoreTriggerSongID,
+              currentSong.id == triggerSongID else { return }
+        loadMoreRecentSongs()
     }
 
     func startPolling(interval: TimeInterval = 1.0) {
@@ -95,13 +119,7 @@ class NowPlayingModel {
     }
 
     private func fetch() {
-        var components = URLComponents(string: "https://api.kexp.org/v2/plays/")
-        components?.queryItems = [
-            URLQueryItem(name: "format", value: "json"),
-            URLQueryItem(name: "limit", value: String(recentSongsLimit)),
-            URLQueryItem(name: "location", value: String(location)),
-        ]
-        guard let url = components?.url else { return }
+        guard let url = playsURL(limit: playlistInitialPageSize, offset: 0) else { return }
         print("[NowPlaying] Plays request: \(url.absoluteString)")
 
         URLSession.shared.dataTask(with: url) { data, response, error in
@@ -120,8 +138,19 @@ class NowPlayingModel {
 
             DispatchQueue.main.async {
                 let recentSongs = self.makeRecentSongs(from: result.results)
-                if self.recentSongs != recentSongs {
-                    self.recentSongs = recentSongs
+                self.latestRecentSongs = recentSongs
+                self.latestHasMoreRecentSongs = result.next != nil
+
+                if self.isPlaylistActive {
+                    if self.recentSongs.isEmpty {
+                        self.resetPlaylistPagination(useLatestRecentSongs: true)
+                    }
+                } else {
+                    if self.recentSongs != recentSongs {
+                        self.recentSongs = recentSongs
+                    }
+                    self.nextRecentSongsOffset = recentSongs.count
+                    self.hasMoreRecentSongs = self.latestHasMoreRecentSongs
                 }
 
                 let isAirbreak = play.playType == "airbreak"
@@ -176,7 +205,7 @@ class NowPlayingModel {
     private func makeRecentSongs(from plays: [Play]) -> [RecentSong] {
         var seenSongIDs: [String: Int] = [:]
 
-        return plays.prefix(recentSongsLimit).map { play in
+        return plays.map { play in
             let isAirbreak = play.playType == "airbreak"
             let songTitle = isAirbreak ? "Airbreak" : (play.song ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             let baseID = play.uri ?? [
@@ -203,6 +232,86 @@ class NowPlayingModel {
                 thumbnailURL: isAirbreak ? nil : play.thumbnailUri.flatMap(URL.init(string:))
             )
         }
+    }
+
+    private var recentSongsLoadMoreTriggerSongID: RecentSong.ID? {
+        recentSongs.last?.id
+    }
+
+    private func resetPlaylistPagination(useLatestRecentSongs: Bool) {
+        isLoadingMoreRecentSongs = false
+        nextRecentSongsOffset = latestRecentSongs.count
+        hasMoreRecentSongs = latestHasMoreRecentSongs
+        if useLatestRecentSongs {
+            recentSongs = latestRecentSongs
+        } else {
+            recentSongs = []
+        }
+    }
+
+    private func loadMoreRecentSongs() {
+        guard !isLoadingMoreRecentSongs,
+              hasMoreRecentSongs,
+              let url = playsURL(limit: playlistPageSize, offset: nextRecentSongsOffset) else { return }
+        isLoadingMoreRecentSongs = true
+        print("[NowPlaying] Load more plays request: \(url.absoluteString)")
+
+        URLSession.shared.dataTask(with: url) { data, response, error in
+            if let error = error {
+                print("[NowPlaying] Load more plays error: \(error)")
+                DispatchQueue.main.async {
+                    self.isLoadingMoreRecentSongs = false
+                }
+                return
+            }
+            guard let data = data else {
+                DispatchQueue.main.async {
+                    self.isLoadingMoreRecentSongs = false
+                }
+                return
+            }
+            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
+            print("[NowPlaying] Load more plays response: status=\(statusCode), bytes=\(data.count)")
+            guard let result = try? JSONDecoder().decode(PlayResult.self, from: data) else {
+                print("[NowPlaying] Load more plays decode failed")
+                DispatchQueue.main.async {
+                    self.isLoadingMoreRecentSongs = false
+                }
+                return
+            }
+
+            let newSongs = self.makeRecentSongs(from: result.results)
+            DispatchQueue.main.async {
+                self.recentSongs = self.mergedRecentSongs(existing: self.recentSongs, additional: newSongs)
+                self.nextRecentSongsOffset += result.results.count
+                self.hasMoreRecentSongs = result.next != nil
+                self.isLoadingMoreRecentSongs = false
+            }
+        }.resume()
+    }
+
+    private func mergedRecentSongs(existing: [RecentSong], additional: [RecentSong]) -> [RecentSong] {
+        var merged: [RecentSong] = []
+        var seenSongIDs = Set<RecentSong.ID>()
+
+        for song in existing + additional {
+            if seenSongIDs.insert(song.id).inserted {
+                merged.append(song)
+            }
+        }
+
+        return merged
+    }
+
+    private func playsURL(limit: Int, offset: Int) -> URL? {
+        var components = URLComponents(string: "https://api.kexp.org/v2/plays/")
+        components?.queryItems = [
+            URLQueryItem(name: "format", value: "json"),
+            URLQueryItem(name: "limit", value: String(limit)),
+            URLQueryItem(name: "offset", value: String(offset)),
+            URLQueryItem(name: "location", value: String(location)),
+        ]
+        return components?.url
     }
 
     private func fetchShow(uri: String) {

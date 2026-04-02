@@ -195,12 +195,12 @@ struct ContentView: View {
                 hostImageURL: model.hostImageURL,
                 audioPlayer: audioPlayer,
                 isShowingPlaylist: isShowingPlaylist,
-                onPlaylistToggle: { isShowingPlaylist.toggle() }
+                onPlaylistToggle: togglePlaylist
             )
 
             if isShowingPlaylist {
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 10) {
+                    LazyVStack(alignment: .leading, spacing: 10) {
                         if model.recentSongs.isEmpty {
                             Text("No recent songs")
                                 .font(.subheadline)
@@ -232,6 +232,18 @@ struct ContentView: View {
                                                 .frame(maxWidth: .infinity, alignment: .leading)
                                         }
                                     }
+                                }
+                                .onAppear {
+                                    model.loadMoreRecentSongsIfNeeded(currentSong: song)
+                                }
+                            }
+
+                            if model.isLoadingMoreRecentSongs {
+                                HStack {
+                                    Spacer()
+                                    ProgressView()
+                                        .controlSize(.small)
+                                    Spacer()
                                 }
                             }
                         }
@@ -276,6 +288,15 @@ struct ContentView: View {
             expandedPlaylistSongID = nil
         }
         .kexpWindow(model: model, audioPlayer: audioPlayer)
+    }
+
+    private func togglePlaylist() {
+        let nextValue = !isShowingPlaylist
+        model.setPlaylistActive(nextValue)
+        if !nextValue {
+            expandedPlaylistSongID = nil
+        }
+        isShowingPlaylist = nextValue
     }
 }
 
