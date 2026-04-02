@@ -271,6 +271,7 @@ struct PlaylistScrollView: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.trailing, 20)
         }
         .scrollIndicators(.visible)
         .frame(maxHeight: maxHeight, alignment: .top)
