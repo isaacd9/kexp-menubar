@@ -12,6 +12,7 @@ struct PlayResult: Codable, Sendable {
 }
 
 struct Play: Codable, Sendable {
+    let uri: String?
     let song: String?
     let artist: String?
     let album: String?
@@ -22,7 +23,7 @@ struct Play: Codable, Sendable {
     let playType: String?
 
     enum CodingKeys: String, CodingKey {
-        case song, artist, album, comment
+        case uri, song, artist, album, comment
         case thumbnailUri = "thumbnail_uri"
         case showUri = "show_uri"
         case releaseDate = "release_date"
@@ -42,7 +43,8 @@ struct Show: Codable, Sendable {
     }
 }
 
-struct RecentSong: Sendable {
+struct RecentSong: Identifiable, Hashable, Sendable {
+    let id: String
     let isAirbreak: Bool
     let song: String
     let artist: String
@@ -54,6 +56,7 @@ struct RecentSong: Sendable {
 
 @Observable
 class NowPlayingModel {
+    private let recentSongsLimit = 20
     var song: String = ""
     var artist: String = ""
     var album: String = ""
@@ -95,7 +98,7 @@ class NowPlayingModel {
         var components = URLComponents(string: "https://api.kexp.org/v2/plays/")
         components?.queryItems = [
             URLQueryItem(name: "format", value: "json"),
-            URLQueryItem(name: "limit", value: "10"),
+            URLQueryItem(name: "limit", value: String(recentSongsLimit)),
             URLQueryItem(name: "location", value: String(location)),
         ]
         guard let url = components?.url else { return }
@@ -116,22 +119,7 @@ class NowPlayingModel {
             }
 
             DispatchQueue.main.async {
-                self.recentSongs = result.results
-                    .compactMap { play in
-                        let isAirbreak = play.playType == "airbreak"
-                        let songTitle = isAirbreak ? "Airbreak" : (play.song ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-                        return RecentSong(
-                            isAirbreak: isAirbreak,
-                            song: songTitle,
-                            artist: isAirbreak ? "" : (play.artist ?? ""),
-                            album: isAirbreak ? "" : (play.album ?? ""),
-                            releaseYear: isAirbreak ? "" : self.releaseYear(from: play.releaseDate),
-                            comment: play.comment ?? "",
-                            thumbnailURL: isAirbreak ? nil : play.thumbnailUri.flatMap(URL.init(string:))
-                        )
-                    }
-                    .prefix(5)
-                    .map { $0 }
+                self.recentSongs = self.makeRecentSongs(from: result.results)
 
                 self.isAirbreak = play.playType == "airbreak"
                 self.song = self.isAirbreak ? "Airbreak" : (play.song ?? "")
@@ -166,6 +154,38 @@ class NowPlayingModel {
 
     private func releaseYear(from releaseDate: String?) -> String {
         String(releaseDate?.prefix(4) ?? "")
+    }
+
+    private func makeRecentSongs(from plays: [Play]) -> [RecentSong] {
+        var seenSongIDs: [String: Int] = [:]
+
+        return plays.prefix(recentSongsLimit).map { play in
+            let isAirbreak = play.playType == "airbreak"
+            let songTitle = isAirbreak ? "Airbreak" : (play.song ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            let baseID = play.uri ?? [
+                play.playType ?? "",
+                play.song ?? "",
+                play.artist ?? "",
+                play.album ?? "",
+                play.releaseDate ?? "",
+                play.comment ?? "",
+                play.thumbnailUri ?? "",
+            ].joined(separator: "|")
+            let occurrence = seenSongIDs[baseID, default: 0]
+            seenSongIDs[baseID] = occurrence + 1
+            let songID = occurrence == 0 ? baseID : "\(baseID)#\(occurrence)"
+
+            return RecentSong(
+                id: songID,
+                isAirbreak: isAirbreak,
+                song: songTitle,
+                artist: isAirbreak ? "" : (play.artist ?? ""),
+                album: isAirbreak ? "" : (play.album ?? ""),
+                releaseYear: isAirbreak ? "" : releaseYear(from: play.releaseDate),
+                comment: play.comment ?? "",
+                thumbnailURL: isAirbreak ? nil : play.thumbnailUri.flatMap(URL.init(string:))
+            )
+        }
     }
 
     private func fetchShow(uri: String) {

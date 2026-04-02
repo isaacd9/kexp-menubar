@@ -184,7 +184,8 @@ struct ContentView: View {
     var model: NowPlayingModel
     @Bindable var audioPlayer: AudioPlayer
     @State private var isShowingPlaylist = false
-    @State private var expandedPlaylistIndex: Int?
+    @State private var expandedPlaylistSongID: RecentSong.ID?
+    private let playlistScrollMaxHeight: CGFloat = 420
 
     var body: some View {
         VStack(spacing: 12) {
@@ -198,44 +199,46 @@ struct ContentView: View {
             )
 
             if isShowingPlaylist {
-                VStack(spacing: 10) {
-                    if model.recentSongs.isEmpty {
-                        Text("No recent songs")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    } else {
-                        ForEach(Array(model.recentSongs.enumerated()), id: \.offset) { entry in
-                            let index = entry.offset
-                            let song = entry.element
-                            VStack(spacing: 6) {
-                                Button {
-                                    guard !song.comment.isEmpty else { return }
-                                    expandedPlaylistIndex = expandedPlaylistIndex == index ? nil : index
-                                } label: {
-                                    CompactSongRowView(
-                                        isAirbreak: song.isAirbreak,
-                                        thumbnailURL: song.thumbnailURL,
-                                        song: song.song,
-                                        artist: song.artist,
-                                        album: song.album,
-                                        releaseYear: song.releaseYear
-                                    )
-                                    .contentShape(Rectangle())
-                                }
-                                .buttonStyle(.plain)
+                ScrollView {
+                    LazyVStack(spacing: 10) {
+                        if model.recentSongs.isEmpty {
+                            Text("No recent songs")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        } else {
+                            ForEach(model.recentSongs) { song in
+                                VStack(spacing: 6) {
+                                    Button {
+                                        guard !song.comment.isEmpty else { return }
+                                        expandedPlaylistSongID = expandedPlaylistSongID == song.id ? nil : song.id
+                                    } label: {
+                                        CompactSongRowView(
+                                            isAirbreak: song.isAirbreak,
+                                            thumbnailURL: song.thumbnailURL,
+                                            song: song.song,
+                                            artist: song.artist,
+                                            album: song.album,
+                                            releaseYear: song.releaseYear
+                                        )
+                                        .contentShape(Rectangle())
+                                    }
+                                    .buttonStyle(.plain)
 
-                                if expandedPlaylistIndex == index && !song.comment.isEmpty {
-                                    VStack(alignment: .leading, spacing: 6) {
-                                        CommentView(comment: song.comment, allowCollapse: false)
-                                        SongLinkButtonsView(song: song.song, artist: song.artist, isAirbreak: song.isAirbreak)
-                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                    if expandedPlaylistSongID == song.id && !song.comment.isEmpty {
+                                        VStack(alignment: .leading, spacing: 6) {
+                                            CommentView(comment: song.comment, allowCollapse: false)
+                                            SongLinkButtonsView(song: song.song, artist: song.artist, isAirbreak: song.isAirbreak)
+                                                .frame(maxWidth: .infinity, alignment: .leading)
+                                        }
                                     }
                                 }
                             }
                         }
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
+                .frame(maxHeight: playlistScrollMaxHeight, alignment: .top)
             } else {
                 AlbumArtView(
                     isAirbreak: model.isAirbreak,
