@@ -175,6 +175,34 @@ struct CompactSongRowView: View {
     }
 }
 
+// MARK: - Overlay Scroller Style
+
+// Forces the thin overlay scrollbar regardless of the "Show scroll bars" system setting.
+private struct OverlayScrollerStyleHelper: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView()
+        DispatchQueue.main.async {
+            var candidate = view.superview
+            while let v = candidate {
+                if let scrollView = v as? NSScrollView {
+                    scrollView.scrollerStyle = .overlay
+                    scrollView.autohidesScrollers = false
+                    break
+                }
+                candidate = v.superview
+            }
+        }
+        return view
+    }
+    func updateNSView(_ nsView: NSView, context: Context) {}
+}
+
+private extension View {
+    func overlayScrollerStyle() -> some View {
+        background(OverlayScrollerStyleHelper())
+    }
+}
+
 // MARK: - PlaylistScrollView
 
 struct PlaylistScrollView: View {
@@ -234,7 +262,9 @@ struct PlaylistScrollView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .scrollIndicators(.visible)
         .frame(maxHeight: maxHeight, alignment: .top)
+        .overlayScrollerStyle()
     }
 }
 
