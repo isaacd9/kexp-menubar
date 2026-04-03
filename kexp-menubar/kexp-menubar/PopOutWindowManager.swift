@@ -42,6 +42,7 @@ class PopOutWindowManager: NSObject, NSWindowDelegate {
     private var window: NSWindow?
     private var statusItem: NSStatusItem?
     private var playbackObserver: NSObjectProtocol?
+    private var savedMenuItems: [NSMenuItem] = []
 
     var isPopped: Bool { window != nil }
 
@@ -77,8 +78,14 @@ class PopOutWindowManager: NSObject, NSWindowDelegate {
 
         self.window = window
 
-        // Show in Dock
+        // Show in Dock, strip default menus (Edit, View, Window, Help)
         NSApp.setActivationPolicy(.regular)
+        if let mainMenu = NSApp.mainMenu {
+            savedMenuItems = Array(mainMenu.items.dropFirst())
+            for item in savedMenuItems {
+                mainMenu.removeItem(item)
+            }
+        }
 
         // Replace MenuBarExtra with a simple status item that focuses the window
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
@@ -96,9 +103,7 @@ class PopOutWindowManager: NSObject, NSWindowDelegate {
             object: nil,
             queue: .main
         ) { [weak self] note in
-            let isPlaying = (note.userInfo?["isPlaying"] as? Bool) ?? false
-            let isBuffering = (note.userInfo?["isBuffering"] as? Bool) ?? false
-            let isLive = isPlaying || isBuffering
+            let isLive = note.kexpIsLive
             Task { @MainActor [weak self] in
                 self?.updateStatusItemIcon(isLive: isLive)
             }
@@ -126,6 +131,12 @@ class PopOutWindowManager: NSObject, NSWindowDelegate {
         }
         playbackObserver = nil
 
+        if let mainMenu = NSApp.mainMenu {
+            for item in savedMenuItems {
+                mainMenu.addItem(item)
+            }
+        }
+        savedMenuItems = []
         NSApp.setActivationPolicy(.accessory)
 
         NotificationCenter.default.post(
@@ -136,14 +147,7 @@ class PopOutWindowManager: NSObject, NSWindowDelegate {
     }
 
     private func updateStatusItemIcon(isLive: Bool) {
-        guard let button = statusItem?.button else { return }
-        if isLive {
-            let config = NSImage.SymbolConfiguration(pointSize: 14, weight: .regular)
-            button.image = NSImage(systemSymbolName: "dot.radiowaves.left.and.right", accessibilityDescription: "KEXP")?
-                .withSymbolConfiguration(config)
-        } else {
-            button.image = NSImage(named: "MenuBarIcon")
-        }
+        statusItem?.button?.image = StatusBarIcon.menuBarImage(isLive: isLive)
     }
 
     @objc private func statusItemClicked(_ sender: Any?) {
