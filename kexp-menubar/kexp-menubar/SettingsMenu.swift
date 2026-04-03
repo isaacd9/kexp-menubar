@@ -111,6 +111,14 @@ struct SettingsMenu: NSViewRepresentable {
 
             menu.addItem(.separator())
 
+            // Donate to KEXP
+            let donateItem = NSMenuItem(title: "Donate to KEXP", action: #selector(openDonate(_:)), keyEquivalent: "")
+            donateItem.target = self
+            donateItem.isEnabled = true
+            menu.addItem(donateItem)
+
+            menu.addItem(.separator())
+
             // Quit
             let quitItem = NSMenuItem(title: "Quit KEXP", action: #selector(quitApp(_:)), keyEquivalent: "")
             quitItem.target = self
@@ -166,6 +174,10 @@ struct SettingsMenu: NSViewRepresentable {
 
         @objc private func setAutoReconnect(_ sender: NSMenuItem) {
             parent.autoReconnectSeconds = sender.tag
+        }
+
+        @objc private func openDonate(_ sender: NSMenuItem) {
+            NSWorkspace.shared.open(URL(string: "https://kexp.org/donate/")!)
         }
 
         @objc private func quitApp(_ sender: NSMenuItem) {

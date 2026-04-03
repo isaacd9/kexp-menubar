@@ -68,10 +68,12 @@ struct HeaderView: View {
 
             HStack {
                 HStack(spacing: 8) {
-                    Image("KEXPLogo")
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(height: 30)
+                    Link(destination: URL(string: "https://kexp.org")!) {
+                        Image("KEXPLogo")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(height: 30)
+                    }
 
                     if let hostImageURL {
                         AsyncImage(url: hostImageURL) { image in
