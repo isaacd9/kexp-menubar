@@ -189,7 +189,6 @@ struct SettingsMenu: NSViewRepresentable {
         }
 
         @objc private func togglePopOut(_ sender: NSMenuItem) {
-            // Capture the menu bar panel before toggle creates the new window
             let menuBarPanel = NSApp.keyWindow
             PopOutWindowManager.shared.toggle(
                 model: parent.model,

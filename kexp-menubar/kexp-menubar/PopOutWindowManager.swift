@@ -53,7 +53,6 @@ class PopOutWindowManager: NSObject, NSWindowDelegate {
     private func popOut(model: NowPlayingModel, audioPlayer: AudioPlayer) {
         let content = PopOutContentView(model: model, audioPlayer: audioPlayer)
         let hostingView = NSHostingView(rootView: content)
-        hostingView.sizingOptions = [.intrinsicContentSize]
 
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 392, height: 600),
