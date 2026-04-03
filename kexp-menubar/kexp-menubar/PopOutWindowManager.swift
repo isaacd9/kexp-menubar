@@ -64,7 +64,7 @@ class PopOutWindowManager: NSObject, NSWindowDelegate {
         window.title = "KEXP"
         window.titlebarAppearsTransparent = true
         window.titleVisibility = .hidden
-        window.level = .floating
+        window.level = .normal
         window.collectionBehavior = [.managed, .fullScreenAuxiliary]
         window.isMovableByWindowBackground = true
         window.backgroundColor = .kexpBackground
