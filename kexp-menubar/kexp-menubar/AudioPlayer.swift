@@ -14,6 +14,14 @@ extension Notification.Name {
     static let kexpPlaybackStateDidChange = Notification.Name("kexpPlaybackStateDidChange")
 }
 
+extension Notification {
+    var kexpIsLive: Bool {
+        let isPlaying = (userInfo?["isPlaying"] as? Bool) ?? false
+        let isBuffering = (userInfo?["isBuffering"] as? Bool) ?? false
+        return isPlaying || isBuffering
+    }
+}
+
 @Observable
 class AudioPlayer {
     var isPlaying: Bool = false

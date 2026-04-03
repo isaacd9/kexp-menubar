@@ -10,6 +10,7 @@ import SwiftUI
 
 struct SettingsMenu: NSViewRepresentable {
     var audioPlayer: AudioPlayer
+    var model: NowPlayingModel
     @Binding var playLocation: Int
     @Binding var autoReconnectSeconds: Int
     @Binding var isCompact: Bool
@@ -48,11 +49,13 @@ struct SettingsMenu: NSViewRepresentable {
             self.parent = parent
         }
 
+        @MainActor
         @objc func buttonClicked(_ sender: NSButton) {
             let menu = buildMenu()
             menu.popUp(positioning: nil, at: NSPoint(x: 0, y: sender.bounds.height + 2), in: sender)
         }
 
+        @MainActor
         private func buildMenu() -> NSMenu {
             let menu = NSMenu()
             menu.autoenablesItems = false
@@ -110,6 +113,17 @@ struct SettingsMenu: NSViewRepresentable {
             menu.addItem(autoReconnectItem)
 
             menu.addItem(.separator())
+
+            // Pop Out / Pop In
+            let isPopped = PopOutWindowManager.shared.isPopped
+            let popItem = NSMenuItem(
+                title: isPopped ? "Pop Back In" : "Pop Out Window",
+                action: #selector(togglePopOut(_:)),
+                keyEquivalent: ""
+            )
+            popItem.target = self
+            popItem.isEnabled = true
+            menu.addItem(popItem)
 
             // Donate to KEXP
             let donateItem = NSMenuItem(title: "Donate to KEXP", action: #selector(openDonate(_:)), keyEquivalent: "")
@@ -174,6 +188,18 @@ struct SettingsMenu: NSViewRepresentable {
 
         @objc private func setAutoReconnect(_ sender: NSMenuItem) {
             parent.autoReconnectSeconds = sender.tag
+        }
+
+        @MainActor
+        @objc private func togglePopOut(_ sender: NSMenuItem) {
+            let menuBarPanel = NSApp.keyWindow
+            PopOutWindowManager.shared.toggle(
+                model: parent.model,
+                audioPlayer: parent.audioPlayer
+            )
+            if PopOutWindowManager.shared.isPopped {
+                menuBarPanel?.close()
+            }
         }
 
         @objc private func openDonate(_ sender: NSMenuItem) {

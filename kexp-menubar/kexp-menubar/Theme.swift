@@ -13,6 +13,18 @@ extension Color {
     static let kexpBackground = Color(nsColor: .kexpBackground)
 }
 
+enum StatusBarIcon {
+    static func menuBarImage(isLive: Bool) -> NSImage? {
+        if isLive {
+            let config = NSImage.SymbolConfiguration(pointSize: 14, weight: .regular)
+            return NSImage(systemSymbolName: "dot.radiowaves.left.and.right", accessibilityDescription: "KEXP")?
+                .withSymbolConfiguration(config)
+        } else {
+            return NSImage(named: "MenuBarIcon")
+        }
+    }
+}
+
 enum AppDefaults {
     static let playLocation = 1
     static let autoReconnectSeconds = 3600

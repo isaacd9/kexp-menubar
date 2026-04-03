@@ -27,9 +27,7 @@ class DJContactActions: NSObject {
 // MARK: - HeaderView
 
 struct HeaderView: View {
-    let programName: String
-    let hostNames: String
-    let hostImageURL: URL?
+    var model: NowPlayingModel
     var audioPlayer: AudioPlayer
     let isShowingPlaylist: Bool
     let onPlaylistToggle: () -> Void
@@ -47,7 +45,7 @@ struct HeaderView: View {
                         NSWorkspace.shared.open(url)
                     }
                 } label: {
-                    Text(programName)
+                    Text(model.programName)
                         .font(.title3.weight(.semibold))
                         .foregroundStyle(.secondary)
                         .underline(programNameHovered)
@@ -58,8 +56,8 @@ struct HeaderView: View {
                     if hovering { NSCursor.pointingHand.push() } else { NSCursor.pop() }
                 }
 
-                if !hostNames.isEmpty {
-                    Text("with \(hostNames)")
+                if !model.hostNames.isEmpty {
+                    Text("with \(model.hostNames)")
                         .font(.headline)
                         .foregroundStyle(.tertiary)
                 }
@@ -75,7 +73,7 @@ struct HeaderView: View {
                             .frame(height: 30)
                     }
 
-                    if let hostImageURL {
+                    if let hostImageURL = model.hostImageURL {
                         AsyncImage(url: hostImageURL) { image in
                             image
                                 .resizable()
@@ -111,6 +109,7 @@ struct HeaderView: View {
 
                     SettingsMenu(
                         audioPlayer: audioPlayer,
+                        model: model,
                         playLocation: $playLocation,
                         autoReconnectSeconds: $autoReconnectSeconds,
                         isCompact: $isCompact

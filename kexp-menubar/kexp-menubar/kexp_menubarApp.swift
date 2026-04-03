@@ -20,9 +20,10 @@ final class MenuBarPlaybackState: ObservableObject {
             object: nil,
             queue: .main
         ) { [weak self] note in
-            let isPlaying = (note.userInfo?["isPlaying"] as? Bool) ?? false
-            let isBuffering = (note.userInfo?["isBuffering"] as? Bool) ?? false
-            self?.isLive = isPlaying || isBuffering
+            let isLive = note.kexpIsLive
+            Task { @MainActor [weak self] in
+                self?.isLive = isLive
+            }
         }
     }
 
@@ -38,10 +39,14 @@ struct kexp_menubarApp: App {
     @State private var audioPlayer = AudioPlayer()
     @State private var model = NowPlayingModel()
     @StateObject private var playbackState = MenuBarPlaybackState()
+    @StateObject private var popOutState = PopOutState()
     @AppStorage("compactMode") private var isCompact = false
 
     var body: some Scene {
-        MenuBarExtra {
+        MenuBarExtra(isInserted: Binding(
+            get: { !popOutState.isPoppedOut },
+            set: { _ in }
+        )) {
             if isCompact {
                 CompactContentView(model: model, audioPlayer: audioPlayer)
             } else {
