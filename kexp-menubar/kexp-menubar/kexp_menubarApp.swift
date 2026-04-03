@@ -22,7 +22,10 @@ final class MenuBarPlaybackState: ObservableObject {
         ) { [weak self] note in
             let isPlaying = (note.userInfo?["isPlaying"] as? Bool) ?? false
             let isBuffering = (note.userInfo?["isBuffering"] as? Bool) ?? false
-            self?.isLive = isPlaying || isBuffering
+            let isLive = isPlaying || isBuffering
+            Task { @MainActor [weak self] in
+                self?.isLive = isLive
+            }
         }
     }
 

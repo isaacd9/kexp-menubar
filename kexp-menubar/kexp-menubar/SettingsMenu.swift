@@ -49,11 +49,13 @@ struct SettingsMenu: NSViewRepresentable {
             self.parent = parent
         }
 
+        @MainActor
         @objc func buttonClicked(_ sender: NSButton) {
             let menu = buildMenu()
             menu.popUp(positioning: nil, at: NSPoint(x: 0, y: sender.bounds.height + 2), in: sender)
         }
 
+        @MainActor
         private func buildMenu() -> NSMenu {
             let menu = NSMenu()
             menu.autoenablesItems = false
@@ -188,6 +190,7 @@ struct SettingsMenu: NSViewRepresentable {
             parent.autoReconnectSeconds = sender.tag
         }
 
+        @MainActor
         @objc private func togglePopOut(_ sender: NSMenuItem) {
             let menuBarPanel = NSApp.keyWindow
             PopOutWindowManager.shared.toggle(

@@ -22,7 +22,10 @@ final class PopOutState: ObservableObject {
             object: nil,
             queue: .main
         ) { [weak self] note in
-            self?.isPoppedOut = (note.userInfo?["isPoppedOut"] as? Bool) ?? false
+            let isPoppedOut = (note.userInfo?["isPoppedOut"] as? Bool) ?? false
+            Task { @MainActor [weak self] in
+                self?.isPoppedOut = isPoppedOut
+            }
         }
     }
 
@@ -95,7 +98,10 @@ class PopOutWindowManager: NSObject, NSWindowDelegate {
         ) { [weak self] note in
             let isPlaying = (note.userInfo?["isPlaying"] as? Bool) ?? false
             let isBuffering = (note.userInfo?["isBuffering"] as? Bool) ?? false
-            self?.updateStatusItemIcon(isLive: isPlaying || isBuffering)
+            let isLive = isPlaying || isBuffering
+            Task { @MainActor [weak self] in
+                self?.updateStatusItemIcon(isLive: isLive)
+            }
         }
 
         // Notify app to hide SwiftUI MenuBarExtra
