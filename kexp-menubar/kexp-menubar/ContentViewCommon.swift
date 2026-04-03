@@ -31,6 +31,8 @@ struct HeaderView: View {
     let hostNames: String
     let hostImageURL: URL?
     var audioPlayer: AudioPlayer
+    let isShowingPlaylist: Bool
+    let onPlaylistToggle: () -> Void
 
     @AppStorage("playLocation") private var playLocation = AppDefaults.playLocation
     @AppStorage("autoReconnectSeconds") private var autoReconnectSeconds = AppDefaults.autoReconnectSeconds
@@ -99,14 +101,182 @@ struct HeaderView: View {
 
                 Spacer()
 
-                SettingsMenu(
-                    audioPlayer: audioPlayer,
-                    playLocation: $playLocation,
-                    autoReconnectSeconds: $autoReconnectSeconds,
-                    isCompact: $isCompact
-                )
+                HStack(spacing: 8) {
+                    PlaylistToggleButton(
+                        isShowingPlaylist: isShowingPlaylist,
+                        onToggle: onPlaylistToggle
+                    )
+
+                    SettingsMenu(
+                        audioPlayer: audioPlayer,
+                        playLocation: $playLocation,
+                        autoReconnectSeconds: $autoReconnectSeconds,
+                        isCompact: $isCompact
+                    )
+                }
             }
         }
+    }
+}
+
+struct PlaylistToggleButton: View {
+    let isShowingPlaylist: Bool
+    let onToggle: () -> Void
+
+    var body: some View {
+        Button(action: onToggle) {
+            Image(systemName: isShowingPlaylist ? "play.fill" : "line.3.horizontal")
+                .font(.system(size: 18, weight: .regular))
+                .foregroundStyle(.secondary)
+                .frame(width: 22, height: 22)
+                .padding(4)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help(isShowingPlaylist ? "Back to Now Playing" : "Show Playlist")
+    }
+}
+
+struct CompactSongRowView: View {
+    let isAirbreak: Bool
+    let thumbnailURL: URL?
+    let song: String
+    let artist: String
+    let album: String
+    let releaseYear: String
+    let playedAt: Date?
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 12) {
+            AlbumArtView(
+                isAirbreak: isAirbreak,
+                thumbnailURL: thumbnailURL,
+                size: 72,
+                cornerRadius: 6,
+                iconSize: 16
+            )
+
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(alignment: .firstTextBaseline) {
+                    Text(song.isEmpty ? "—" : song)
+                        .font(.title3.bold())
+                        .lineLimit(1)
+                    Spacer()
+                    if let playedAt {
+                        Text(playedAt, style: .time)
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+
+                Text(artist.isEmpty ? "—" : artist)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+
+                Text(album.isEmpty ? "—" : releaseYear.isEmpty ? album : "\(album) — \(releaseYear)")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+                    .lineLimit(1)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+}
+
+// MARK: - Overlay Scroller Style
+
+// Forces the thin overlay scrollbar regardless of the "Show scroll bars" system setting.
+private struct OverlayScrollerStyleHelper: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView()
+        DispatchQueue.main.async {
+            var candidate = view.superview
+            while let v = candidate {
+                if let scrollView = v as? NSScrollView {
+                    scrollView.scrollerStyle = .overlay
+                    scrollView.autohidesScrollers = false
+                    break
+                }
+                candidate = v.superview
+            }
+        }
+        return view
+    }
+    func updateNSView(_ nsView: NSView, context: Context) {}
+}
+
+private extension View {
+    func overlayScrollerStyle() -> some View {
+        background(OverlayScrollerStyleHelper())
+    }
+}
+
+// MARK: - PlaylistScrollView
+
+struct PlaylistScrollView: View {
+    var model: NowPlayingModel
+    @Binding var expandedPlaylistSongID: RecentSong.ID?
+    var maxHeight: CGFloat = 420
+
+    var body: some View {
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 10) {
+                if model.recentSongs.isEmpty {
+                    Text("No recent songs")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                } else {
+                    ForEach(model.recentSongs) { song in
+                        VStack(spacing: 6) {
+                            Button {
+                                guard !song.isAirbreak else { return }
+                                expandedPlaylistSongID = expandedPlaylistSongID == song.id ? nil : song.id
+                            } label: {
+                                CompactSongRowView(
+                                    isAirbreak: song.isAirbreak,
+                                    thumbnailURL: song.thumbnailURL,
+                                    song: song.song,
+                                    artist: song.artist,
+                                    album: song.album,
+                                    releaseYear: song.releaseYear,
+                                    playedAt: song.playedAt
+                                )
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+
+                            if expandedPlaylistSongID == song.id && !song.isAirbreak {
+                                VStack(alignment: .leading, spacing: 6) {
+                                    if !song.comment.isEmpty {
+                                        CommentView(comment: song.comment, allowCollapse: false)
+                                    }
+                                    SongLinkButtonsView(song: song.song, artist: song.artist, isAirbreak: song.isAirbreak)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                }
+                            }
+                        }
+                        .onAppear {
+                            model.loadMoreRecentSongsIfNeeded(currentSong: song)
+                        }
+                    }
+
+                    if model.isLoadingMoreRecentSongs {
+                        HStack {
+                            Spacer()
+                            ProgressView()
+                                .controlSize(.small)
+                            Spacer()
+                        }
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .scrollIndicators(.visible)
+        .frame(maxHeight: maxHeight, alignment: .top)
+        .overlayScrollerStyle()
     }
 }
 

@@ -135,11 +135,12 @@ struct CommentTextView: NSViewRepresentable {
 
 struct CommentView: View {
     let comment: String
+    var allowCollapse: Bool = true
     @State private var expanded = false
     private let collapsedHeight: CGFloat = 80
 
     var body: some View {
-        let isCollapsible = shouldCollapseComment(comment)
+        let isCollapsible = allowCollapse && shouldCollapseComment(comment)
         let isCollapsed = !expanded && isCollapsible
         VStack(spacing: 0) {
             CommentTextView(comment: comment, onTap: isCollapsible ? { expanded.toggle() } : nil)
@@ -182,6 +183,8 @@ struct CommentView: View {
 struct ContentView: View {
     var model: NowPlayingModel
     @Bindable var audioPlayer: AudioPlayer
+    @State private var isShowingPlaylist = false
+    @State private var expandedPlaylistSongID: RecentSong.ID?
 
     var body: some View {
         VStack(spacing: 12) {
@@ -189,40 +192,54 @@ struct ContentView: View {
                 programName: model.programName,
                 hostNames: model.hostNames,
                 hostImageURL: model.hostImageURL,
-                audioPlayer: audioPlayer
+                audioPlayer: audioPlayer,
+                isShowingPlaylist: isShowingPlaylist,
+                onPlaylistToggle: togglePlaylist
             )
 
-            AlbumArtView(
-                isAirbreak: model.isAirbreak,
-                thumbnailURL: model.thumbnailURL
-            )
+            if isShowingPlaylist {
+                PlaylistScrollView(model: model, expandedPlaylistSongID: $expandedPlaylistSongID)
+            } else {
+                AlbumArtView(
+                    isAirbreak: model.isAirbreak,
+                    thumbnailURL: model.thumbnailURL
+                )
 
-            // Song info
-            VStack(spacing: 4) {
-                Text(model.song.isEmpty ? "—" : model.song)
-                    .font(.title2.bold())
+                VStack(spacing: 4) {
+                    Text(model.song.isEmpty ? "—" : model.song)
+                        .font(.title2.bold())
 
-                Text(model.artist.isEmpty ? "—" : model.artist)
-                    .font(.title3)
-                    .foregroundStyle(.secondary)
+                    Text(model.artist.isEmpty ? "—" : model.artist)
+                        .font(.title3)
+                        .foregroundStyle(.secondary)
 
-                Text(model.album.isEmpty ? "—" : model.releaseYear.isEmpty ? model.album : "\(model.album) — \(model.releaseYear)")
-                    .font(.callout)
-                    .foregroundStyle(.tertiary)
-            }
+                    Text(model.album.isEmpty ? "—" : model.releaseYear.isEmpty ? model.album : "\(model.album) — \(model.releaseYear)")
+                        .font(.callout)
+                        .foregroundStyle(.tertiary)
+                }
 
-            if !model.comment.isEmpty {
-                CommentView(comment: model.comment)
+                if !model.comment.isEmpty {
+                    CommentView(comment: model.comment)
+                }
             }
 
             ControlsView(
                 audioPlayer: audioPlayer,
                 song: model.song,
                 artist: model.artist,
-                isAirbreak: model.isAirbreak
+                isAirbreak: model.isAirbreak,
+                showSongLinks: !isShowingPlaylist
             )
         }
         .kexpWindow(model: model, audioPlayer: audioPlayer)
+    }
+
+    private func togglePlaylist() {
+        isShowingPlaylist.toggle()
+        model.setPlaylistActive(isShowingPlaylist)
+        if !isShowingPlaylist {
+            expandedPlaylistSongID = nil
+        }
     }
 }
 
