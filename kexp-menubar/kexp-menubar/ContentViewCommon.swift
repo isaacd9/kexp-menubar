@@ -31,6 +31,7 @@ struct HeaderView: View {
     let hostNames: String
     let hostImageURL: URL?
     var audioPlayer: AudioPlayer
+    var model: NowPlayingModel
     let isShowingPlaylist: Bool
     let onPlaylistToggle: () -> Void
 
@@ -111,6 +112,7 @@ struct HeaderView: View {
 
                     SettingsMenu(
                         audioPlayer: audioPlayer,
+                        model: model,
                         playLocation: $playLocation,
                         autoReconnectSeconds: $autoReconnectSeconds,
                         isCompact: $isCompact

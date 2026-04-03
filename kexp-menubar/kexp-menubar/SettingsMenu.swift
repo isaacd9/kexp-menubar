@@ -10,6 +10,7 @@ import SwiftUI
 
 struct SettingsMenu: NSViewRepresentable {
     var audioPlayer: AudioPlayer
+    var model: NowPlayingModel
     @Binding var playLocation: Int
     @Binding var autoReconnectSeconds: Int
     @Binding var isCompact: Bool
@@ -111,6 +112,17 @@ struct SettingsMenu: NSViewRepresentable {
 
             menu.addItem(.separator())
 
+            // Pop Out / Pop In
+            let isPopped = PopOutWindowManager.shared.isPopped
+            let popItem = NSMenuItem(
+                title: isPopped ? "Pop Back In" : "Pop Out Window",
+                action: #selector(togglePopOut(_:)),
+                keyEquivalent: ""
+            )
+            popItem.target = self
+            popItem.isEnabled = true
+            menu.addItem(popItem)
+
             // Donate to KEXP
             let donateItem = NSMenuItem(title: "Donate to KEXP", action: #selector(openDonate(_:)), keyEquivalent: "")
             donateItem.target = self
@@ -174,6 +186,18 @@ struct SettingsMenu: NSViewRepresentable {
 
         @objc private func setAutoReconnect(_ sender: NSMenuItem) {
             parent.autoReconnectSeconds = sender.tag
+        }
+
+        @objc private func togglePopOut(_ sender: NSMenuItem) {
+            // Capture the menu bar panel before toggle creates the new window
+            let menuBarPanel = NSApp.keyWindow
+            PopOutWindowManager.shared.toggle(
+                model: parent.model,
+                audioPlayer: parent.audioPlayer
+            )
+            if PopOutWindowManager.shared.isPopped {
+                menuBarPanel?.close()
+            }
         }
 
         @objc private func openDonate(_ sender: NSMenuItem) {

@@ -193,6 +193,7 @@ struct ContentView: View {
                 hostNames: model.hostNames,
                 hostImageURL: model.hostImageURL,
                 audioPlayer: audioPlayer,
+                model: model,
                 isShowingPlaylist: isShowingPlaylist,
                 onPlaylistToggle: togglePlaylist
             )

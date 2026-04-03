@@ -38,10 +38,14 @@ struct kexp_menubarApp: App {
     @State private var audioPlayer = AudioPlayer()
     @State private var model = NowPlayingModel()
     @StateObject private var playbackState = MenuBarPlaybackState()
+    @StateObject private var popOutState = PopOutState()
     @AppStorage("compactMode") private var isCompact = false
 
     var body: some Scene {
-        MenuBarExtra {
+        MenuBarExtra(isInserted: Binding(
+            get: { !popOutState.isPoppedOut },
+            set: { _ in }
+        )) {
             if isCompact {
                 CompactContentView(model: model, audioPlayer: audioPlayer)
             } else {
