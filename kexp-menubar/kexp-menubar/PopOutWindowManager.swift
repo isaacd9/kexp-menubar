@@ -36,15 +36,15 @@ final class PopOutState: ObservableObject {
 @MainActor
 class PopOutWindowManager: NSObject, NSWindowDelegate {
     static let shared = PopOutWindowManager()
-    private var panel: NSPanel?
+    private var window: NSWindow?
     private var statusItem: NSStatusItem?
     private var playbackObserver: NSObjectProtocol?
 
-    var isPopped: Bool { panel != nil }
+    var isPopped: Bool { window != nil }
 
     func toggle(model: NowPlayingModel, audioPlayer: AudioPlayer) {
-        if let panel, panel.isVisible {
-            panel.close()
+        if let window, window.isVisible {
+            window.close()
             return
         }
         popOut(model: model, audioPlayer: audioPlayer)
@@ -55,25 +55,25 @@ class PopOutWindowManager: NSObject, NSWindowDelegate {
         let hostingView = NSHostingView(rootView: content)
         hostingView.sizingOptions = [.intrinsicContentSize]
 
-        let panel = NSPanel(
+        let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 392, height: 600),
             styleMask: [.titled, .closable, .miniaturizable, .fullSizeContentView],
             backing: .buffered,
             defer: false
         )
-        panel.title = "KEXP"
-        panel.titlebarAppearsTransparent = true
-        panel.titleVisibility = .hidden
-        panel.isFloatingPanel = true
-        panel.level = .floating
-        panel.isMovableByWindowBackground = true
-        panel.backgroundColor = .kexpBackground
-        panel.contentView = hostingView
-        panel.isReleasedWhenClosed = false
-        panel.delegate = self
-        panel.center()
+        window.title = "KEXP"
+        window.titlebarAppearsTransparent = true
+        window.titleVisibility = .hidden
+        window.level = .floating
+        window.collectionBehavior = [.managed, .fullScreenAuxiliary]
+        window.isMovableByWindowBackground = true
+        window.backgroundColor = .kexpBackground
+        window.contentView = hostingView
+        window.isReleasedWhenClosed = false
+        window.delegate = self
+        window.center()
 
-        self.panel = panel
+        self.window = window
 
         // Show in Dock
         NSApp.setActivationPolicy(.regular)
@@ -86,6 +86,7 @@ class PopOutWindowManager: NSObject, NSWindowDelegate {
             button.action = #selector(statusItemClicked(_:))
         }
         statusItem = item
+        updateStatusItemIcon(isLive: audioPlayer.isPlaying || audioPlayer.isBuffering)
 
         // Mirror playback state on the status item icon
         playbackObserver = NotificationCenter.default.addObserver(
@@ -106,7 +107,7 @@ class PopOutWindowManager: NSObject, NSWindowDelegate {
         )
 
         NSApp.activate(ignoringOtherApps: true)
-        panel.makeKeyAndOrderFront(nil)
+        window.makeKeyAndOrderFront(nil)
     }
 
     private func tearDown() {
@@ -132,22 +133,27 @@ class PopOutWindowManager: NSObject, NSWindowDelegate {
     private func updateStatusItemIcon(isLive: Bool) {
         guard let button = statusItem?.button else { return }
         if isLive {
-            button.image = NSImage(systemSymbolName: "dot.radiowaves.left.and.right", accessibilityDescription: "KEXP")
+            let config = NSImage.SymbolConfiguration(pointSize: 14, weight: .regular)
+            button.image = NSImage(systemSymbolName: "dot.radiowaves.left.and.right", accessibilityDescription: "KEXP")?
+                .withSymbolConfiguration(config)
         } else {
             button.image = NSImage(named: "MenuBarIcon")
         }
     }
 
     @objc private func statusItemClicked(_ sender: Any?) {
-        guard let panel else { return }
+        guard let window else { return }
+        if window.isMiniaturized {
+            window.deminiaturize(nil)
+        }
         NSApp.activate(ignoringOtherApps: true)
-        panel.makeKeyAndOrderFront(nil)
+        window.makeKeyAndOrderFront(nil)
     }
 
     // MARK: - NSWindowDelegate
 
     func windowWillClose(_ notification: Notification) {
-        panel = nil
+        window = nil
         tearDown()
     }
 }
