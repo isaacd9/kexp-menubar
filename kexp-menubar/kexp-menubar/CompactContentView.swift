@@ -17,9 +17,7 @@ struct CompactContentView: View {
     var body: some View {
         VStack(spacing: 12) {
             HeaderView(
-                programName: model.programName,
-                hostNames: model.hostNames,
-                hostImageURL: model.hostImageURL,
+                model: model,
                 audioPlayer: audioPlayer,
                 isShowingPlaylist: isShowingPlaylist,
                 onPlaylistToggle: togglePlaylist
