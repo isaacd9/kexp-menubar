@@ -355,6 +355,7 @@ struct KEXPWindowModifier: ViewModifier {
             .foregroundStyle(.white)
             .frame(width: 360, alignment: .topLeading)
             .fixedSize(horizontal: false, vertical: true)
+            .frame(maxHeight: .infinity, alignment: .top)
             .background(Color.kexpBackground)
             .background(MenuBarPanelResizeFix())
             .focusable()
@@ -395,6 +396,25 @@ private struct MenuBarPanelResizeFix: NSViewRepresentable {
             // swaps between playlist and now playing stay visually anchored.
             window.animationBehavior = .none
             window.backgroundColor = .kexpBackground
+
+            guard let contentView = window.contentView else { return }
+
+            var hostedView: NSView = nsView
+            while let superview = hostedView.superview, superview != contentView {
+                hostedView = superview
+            }
+
+            guard hostedView.superview == contentView else { return }
+
+            // In release builds from GitHub Actions, the window can resize while the
+            // hosted SwiftUI view keeps its previous height. Pin the hosted view to the
+            // panel bounds so SwiftUI gets laid out against the full window size.
+            if hostedView.frame != contentView.bounds {
+                hostedView.frame = contentView.bounds
+            }
+            hostedView.autoresizingMask = [.width, .height]
+            hostedView.needsLayout = true
+            hostedView.layoutSubtreeIfNeeded()
         }
     }
 }
