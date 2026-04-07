@@ -10,11 +10,37 @@ on:
 
 jobs:
   build-release:
-    runs-on: macos-latest
+    runs-on: macos-15
+    env:
+      XCODE_VERSION: "26.1.1"
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+
+      - name: Log available Xcodes
+        run: ls /Applications | grep Xcode || true
+
+      - name: Select Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: ${{ env.XCODE_VERSION }}
+
+      - name: Log build environment
+        run: |
+          {
+            echo "sw_vers:"
+            sw_vers
+            echo
+            echo "xcode-select -p:"
+            xcode-select -p
+            echo
+            echo "xcodebuild -version:"
+            xcodebuild -version
+            echo
+            echo "xcrun --show-sdk-version:"
+            xcrun --show-sdk-version
+          } | tee build-environment.txt
 
       - name: Install just
         run: brew install just
@@ -30,6 +56,7 @@ jobs:
           rm -rf artifact
           mkdir -p artifact
           cp -R "build/output/release/KEXP Menubar.app" "artifact/KEXP Menubar.app"
+          cp "build-environment.txt" "artifact/build-environment.txt"
 
       - name: Upload release app artifact
         uses: actions/upload-artifact@v4
