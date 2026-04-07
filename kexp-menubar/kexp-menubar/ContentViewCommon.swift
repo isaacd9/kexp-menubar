@@ -356,6 +356,7 @@ struct KEXPWindowModifier: ViewModifier {
             .frame(width: 360, alignment: .topLeading)
             .fixedSize(horizontal: false, vertical: true)
             .background(Color.kexpBackground)
+            .background(MenuBarPanelResizeFix())
             .focusable()
             .focusEffectDisabled()
             .onKeyPress(.space) {
@@ -377,6 +378,24 @@ struct KEXPWindowModifier: ViewModifier {
             .onChange(of: autoReconnectSeconds) {
                 audioPlayer.setAutoReconnectInterval(TimeInterval(autoReconnectSeconds))
             }
+    }
+}
+
+private struct MenuBarPanelResizeFix: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSView {
+        NSView()
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        DispatchQueue.main.async {
+            guard let window = nsView.window else { return }
+            guard !window.styleMask.contains(.titled) else { return }
+            // Tahoe 26.4 started animating MenuBarExtra resizes like a fresh panel open.
+            // Keep the panel itself opaque and disable those window animations so content
+            // swaps between playlist and now playing stay visually anchored.
+            window.animationBehavior = .none
+            window.backgroundColor = .kexpBackground
+        }
     }
 }
 
