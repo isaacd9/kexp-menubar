@@ -36,6 +36,8 @@ xattr -dr com.apple.quarantine "/Applications/KEXP Menubar.app"
 - Links to open the current song in Spotify and Apple Music.
 - Selectable location for show information, to indicate if you're listening to KEXP (Seattle) or KEXC (San Francisco).
 - A compact mode, which hides the DJ comment and show information.
+- A playlist view showing recent plays, with pagination to load more.
+- Pop out the player into a standalone window that stays visible outside the menu bar.
 
 ## Disclaimer
 
