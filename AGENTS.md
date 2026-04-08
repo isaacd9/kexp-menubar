@@ -30,12 +30,13 @@ No external dependencies — everything uses Apple frameworks. There are no test
 | File | Role |
 |---|---|
 | `AudioPlayer.swift` | AVPlayer wrapper. Streams `kexp160.aac`. Soft-pause (mute but keep connection alive), auto-reconnect, MPRemoteCommandCenter integration, Now Playing info publishing. |
-| `NowPlayingModel.swift` | Polls `api.kexp.org/v2/plays/` for current song/show. 1s when window visible, 3s in background. Fetches show details on show change only. |
+| `NowPlayingModel.swift` | Polls `api.kexp.org/v2/plays/` for current song/show. 1s when window visible, 3s in background. Fetches show details on show change only. Also manages playlist state: recent songs list with paginated loading. |
 | `ContentView.swift` | Full layout. Also contains `CommentTextView` (NSTextView with URL detection) and `CommentView` (collapsible). |
 | `CompactContentView.swift` | Minimal layout — small album art beside song info, no comments. |
-| `ContentViewCommon.swift` | Shared views: `HeaderView`, `AlbumArtView` (with retry logic), `KEXPWindowModifier` (window setup, keyboard shortcuts, polling lifecycle). |
+| `ContentViewCommon.swift` | Shared views: `HeaderView` (with DJ contact menu on host image tap), `AlbumArtView` (with retry logic), `KEXPWindowModifier` (window setup, keyboard shortcuts, polling lifecycle), `PlaylistToggleButton`, `PlaylistScrollView` (paginated recent plays list with expandable song details), `CompactSongRowView`. |
 | `ControlsView.swift` | Play/pause button, Apple Music/Spotify links, AirPlay picker. |
-| `SettingsMenu.swift` | NSButton + NSMenu. Volume slider, compact mode, reconnect, location, auto-reconnect interval, quit. |
+| `SettingsMenu.swift` | NSButton + NSMenu. Volume slider, compact mode, pop out, reconnect, location, auto-reconnect interval, quit. |
+| `PopOutWindowManager.swift` | Detaches the player into a standalone NSWindow. Swaps the MenuBarExtra for a simple NSStatusItem, shows the app in the Dock, and tears down on close. |
 | `AirPlayButton.swift` | Wraps `AVRoutePickerView`. |
 | `Theme.swift` | Colors (`kexpOrange` #FBAD18, `kexpBackground` #231F20) and `AppDefaults`. |
 
@@ -45,6 +46,7 @@ No external dependencies — everything uses Apple frameworks. There are no test
 - **NSViewRepresentable bridging:** Used for `SettingsMenu` (NSButton/NSMenu), `AirPlayButton` (AVRoutePickerView), and `CommentTextView` (NSTextView) where SwiftUI lacks native equivalents.
 - **`allowsExternalPlayback = false`:** Forces local audio rendering so AirPlay routes the app's audio output rather than handing off the stream URL to the remote device.
 - **Stale response guarding:** Show fetches check `currentShowUri` hasn't changed before applying results.
+- **Pop-out window:** Detaches the UI into a standalone NSWindow, replaces the SwiftUI MenuBarExtra with a plain NSStatusItem, and switches the activation policy to `.regular` (showing in Dock). All state is torn down when the window closes.
 
 ## Code style
 
